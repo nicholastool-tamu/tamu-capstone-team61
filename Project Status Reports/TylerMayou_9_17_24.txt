@@ -1,0 +1,13 @@
+Week 5:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+9/17/2024
+
+Plans for this week:
+
+I figured out all the requirements needed for my subsystem from the sponsor.
+My personal plan is to learn how to program ESP32 finalize what main parts are needed.
+In terms of the team - start working on the FSR and ICD.
