@@ -14,5 +14,5 @@ We need to work on our FSR, ICD, Execution Plan, and Validation Plan
 
 Me:
 I have started programming the ESP32 using VScode with ESP-IDF. I have used one of the sample programs to test the ESP32
-By next week I plan to have all parts picked out and ready to order.
+By the end of next week I plan to have all parts picked out and ready to order.
 I plan to continue programming the ESP32 for the Intro Project.
