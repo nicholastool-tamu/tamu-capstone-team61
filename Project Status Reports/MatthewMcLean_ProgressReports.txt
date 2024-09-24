@@ -1,2 +1,19 @@
 
 
+Matthew McLean 
+Fall 2024
+
+Week of 09/24/24
+So far I have been learning about Kotlin and Android Studio. 
+My initial projrect is to create a basic android app. So far I have
+messed around with layouts and started practing how to assign functions
+to various on screen items. I have an app that can navigate from page 
+to page with buttons. 
+
+Looking forward
+I will get the layouts looking better and include more functionality. I will
+Research how to take information from a database and populate the pages with it. 
+
+
+
+
