@@ -1,0 +1,18 @@
+Week 6:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+9/24/2024
+
+Plans for this week:
+
+Team:
+We presented our Midterm Presentation on Monday.
+We need to work on our FSR, ICD, Execution Plan, and Validation Plan
+
+Me:
+I have started programming the ESP32 using VScode with ESP-IDF. I have used one of the sample programs to test the ESP32
+By next week I plan to have all parts picked out and ready to order.
+I plan to continue programming the ESP32 for the Intro Project.
