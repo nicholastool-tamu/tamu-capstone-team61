@@ -28,3 +28,26 @@ Nicholas Tool
 Plans for this Week (10/1-10/8)
 I have solidified my plans for back-end developmenmt, and I am going to use PHP for the API due to ease of connectivity with other programs and systems, which will make it easier for us to link everything in the future
 My plan is to start validation testing the database and host to make sure that it is working as expected on a basic level, and also add in any code or parts to the database and host that may appear as needed.
+
+Nicholas Tool
+10/8/24
+
+Plans for this week (10/8-10/15)
+I have set up the database on the Raspberry Pi, and the goal for this week is to finish the intro project, which will also serve as validation testing for the connection between the web server and the database
+
+
+Nicholas Tool
+10/15/24
+
+Plans for this week (10/15-10/22)
+I finished my introductory project, and the goal this week is to work on creating PHP functions to handle the API development.
+I would like to write PHP scripts for creating tables in the database, as well as potentially working on some basic GET and POST functions.
+
+
+Nicholas Tool
+10/22/24
+
+Plans for this week (10/22-10/29)
+I did a lot of work over the past week on creating the APIs using PHP and created some functions to create tables, as well as GET and POST functions.
+I implemented basic security features, like protection against XSS & SQL injection, but still have not done any validation testing on these functions.
+This week I would like to validate the functions that I have created and make sure that they are working as expected, as they serve as the backbone of the main functions of my subsystem.
