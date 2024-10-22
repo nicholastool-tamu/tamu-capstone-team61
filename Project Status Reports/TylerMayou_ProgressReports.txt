@@ -1,0 +1,60 @@
+Week 5:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+9/17/2024
+
+Plans for this week:
+I figured out all the requirements needed for my subsystem from the sponsor.
+My personal plan is to learn how to program ESP32 finalize what main parts are needed.
+In terms of the team - start working on the FSR and ICD.
+
+
+Week 6:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+9/24/2024
+
+Plans for this week:
+
+Team:
+We presented our Midterm Presentation on Monday.
+We need to work on our FSR, ICD, Execution Plan, and Validation Plan
+
+Me:
+I have started programming the ESP32 using VScode with ESP-IDF. I have used one of the sample programs to test the ESP32
+By the end of next week I plan to have all parts picked out and ready to order.
+I plan to continue programming the ESP32 for the Intro Project.
+
+
+Week 7:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+10/1/2024
+
+Plans for this week:
+Continuing learning/researching how to program ESP32 using VSCode with ESP-IDF. I have been watching videos and looking Espressif's ESP-IDF documentation.
+I have emailed our sponsor (Souryendu) about my progress with the project.
+By next Tuesday I will have a list of all the parts I will need and have ready to be ordered.
+
+
+Week 8:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+10/8/2024
+
+Plans for this week:
+Finalize Introduction Project.
+Look in Department for parts they may already have.
+Work on Status Update Presentation.
