@@ -58,3 +58,17 @@ Plans for this week:
 Finalize Introduction Project.
 Look in Department for parts they may already have.
 Work on Status Update Presentation.
+
+
+Week 10:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+10/8/2024
+
+Plans for this week:
+Start PCB Design
+Continue programming ESP32
+Start testing my circuit when parts come in.
