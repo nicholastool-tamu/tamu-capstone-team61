@@ -1,0 +1,20 @@
+# Ignore environment files
+.env
+
+# Ignore configuration files with sensitive data
+config.php
+config/*.php
+
+# Ignore composer dependencies (if you don't want to commit them)
+vendor/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore logs
+logs/
+*.log
+
+# Ignore temporary files
+tmp/
