@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Home - Usage</title>
+    <?php 
+    $pageTitle = "Light Control";
+    include 'common_styles.php';
+    ?>
 </head>
 <body>
-    <h1>This will be usage page</h1>
+    <?php include 'common_header.php'; ?>
+    <h2>This will be usage page</h2>
 </body>
 </html>
 

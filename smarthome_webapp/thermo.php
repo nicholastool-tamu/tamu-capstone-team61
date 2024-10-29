@@ -71,6 +71,41 @@
             );
             opacity: 0.3;
         }
+
+        /* Add to your existing styles */
+        .manual-control {
+            margin: 20px auto;
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .temp-input {
+            padding: 8px;
+            width: 100px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .temp-button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .temp-button:hover {
+            background-color: #2980b9;
+        }
+
+        .temp-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
     </style>
 </head>
 <body>
@@ -84,6 +119,18 @@
                 <div class="set-temp" id="setTemp">Set: 72°</div>
             </div>
         </div>
+    </div>
+
+    <!-- Add manual temperature control -->
+    <div class="manual-control">
+        <input type="number" 
+               id="manualTemp" 
+               min="60" 
+               max="80" 
+               step="1" 
+               placeholder="60-80°F"
+               class="temp-input">
+        <button id="setManualTemp" class="temp-button">Set Temperature</button>
     </div>
 
     <script>
@@ -145,6 +192,33 @@
 
         // Initialize display
         updateDisplay();
+
+        // Add manual temperature control
+        const manualTempInput = document.getElementById('manualTemp');
+        const setManualTempButton = document.getElementById('setManualTemp');
+
+        setManualTempButton.addEventListener('click', () => {
+            const newTemp = parseInt(manualTempInput.value);
+            if (newTemp >= 60 && newTemp <= 80) {
+                setTemp = newTemp;
+                updateDisplay();
+                manualTempInput.value = ''; // Clear the input
+            } else {
+                alert('Please enter a temperature between 60° and 80°F');
+            }
+        });
+
+        // Allow Enter key to submit
+        manualTempInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                setManualTempButton.click();
+            }
+        });
+
+        // Prevent non-numeric input
+        manualTempInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
     </script>
 </body>
 </html>

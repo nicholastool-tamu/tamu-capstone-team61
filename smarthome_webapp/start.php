@@ -77,9 +77,9 @@ session_start();
         <!-- Container for navigation buttons -->
         <div class="buttons">
             <!-- Login button linking to login page -->
-            <a href="login.php" class="button login-btn">Login</a>
+            <a href="login_page.php" class="button login-btn">Login</a>
             <!-- Sign up button linking to signup page -->
-            <a href="signup.php" class="button signup-btn">Sign Up</a>
+            <a href="sign_up.php" class="button signup-btn">Sign Up</a>
         </div>
     </div>
 </body>

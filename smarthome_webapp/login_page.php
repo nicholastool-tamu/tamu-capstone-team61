@@ -1,6 +1,52 @@
 <?php
-// Start session for future user tracking
-session_start();
+// Turn off all error reporting for display
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+
+// But ensure errors are still being logged
+error_reporting(E_ALL);
+
+// Start session first
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Include only the logging functions
+require_once 'includes/logging_functions.php';
+
+// Custom error handler to capture all errors/notices
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    if (!(error_reporting() & $errno)) {
+        return false;
+    }
+    
+    $message = sprintf("%s on line %d: %s", basename($errfile), $errline, $errstr);
+    logError($errfile, $message);
+    return true;
+});
+
+require_once 'login_func.php';
+
+// Check if form was submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $result = attemptLogin($_POST['username'], $_POST['password']);
+    
+    if ($result['success']) {
+        logNotice(__FILE__, "Successfully logged in!", 'success');
+        header("Location: home_dash.php");
+        exit();
+    } else {
+        logError(__FILE__, $result['message']);
+        header("Location: errors.php");
+        exit();
+    }
+}
+
+// Check for signup success message
+if (isset($_SESSION['signup_success'])) {
+    $success_message = "Account created successfully! Please login.";
+    unset($_SESSION['signup_success']);
+}
 ?>
 
 <!DOCTYPE html>
@@ -93,8 +139,12 @@ session_start();
 <body>
     <div class="login-container">
         <h1>Login to Smart Home</h1>
-        <!-- Simple form that redirects to home_dash.php -->
-        <form action="home_dash.php" method="POST">
+        <?php if (isset($success_message)): ?>
+            <div class="success-message" style="color: green; text-align: center; margin-bottom: 20px;">
+                <?php echo htmlspecialchars($success_message); ?>
+            </div>
+        <?php endif; ?>
+        <form action="login_page.php" method="POST">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required>
