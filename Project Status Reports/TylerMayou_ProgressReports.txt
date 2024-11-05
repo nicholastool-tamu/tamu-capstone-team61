@@ -73,7 +73,7 @@ Start PCB Design
 Continue programming ESP32
 Start testing my circuit when parts come in.
 
-Week 10:
+Week 11:
 
 ECEN 403-905
 
@@ -85,3 +85,16 @@ Plans for this week:
 Finish PCB and order it
 Continue programming esp32
 Start Circuit Testing
+
+Week 12:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+11/5/2024
+
+Plans for this week:
+Continue Programming ESP32
+Start Circuit/Component Testing on Breadboard
+
