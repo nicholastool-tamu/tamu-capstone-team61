@@ -6,30 +6,51 @@ include '../includes/functions.php';
 //Content type for UI client
 header('Content-Type: application/json');
 
-$requestMethod = $_SERVER["REQUEST_METHOD"];
+switch ($_SERVER['REQUEST_METHOD']) {
+	case 'GET':
+		//Check if a specific device is being requested, otherwise give data for all devices
+		if (isset($_GET('device_id'])) {
+			getRecord($conn, 'devices', ['device_id' => $_GET['device_id']]);
+		}
+		else {
+			getRecord($conn, 'devices');
+		}
+		break;
+	case 'POST':
+		if (isset($_POST['action']) && $_POST['action'] === 'update') {
+		//Update device status
+			if (isset($_POST['device_id'], $_POST['status'])) {
+				updateRecord($conn, 'devices', ['status'], ['device_id'], 'si', $_POST['status'], $_POST['device_id']);
+			}
+			else {
+				jsonResponse(false, "Device ID and status required for updating.");
+			}
+		}
+		else {
+			//Create new device
+			if (isset($_POST['device_name'], $_POST['device_type'], $_POST['status'])) {
+				createRecord($conn, 'devices', ['device_name', 'device_type', 'status'], 'sss', $_POST['device_name'], $_POST['device_type'], $_POST['status']);
+			}
+			else {
+				jsonResponse(false, "Device name, type, and status required for creation.");
+			}
+		}
+		break;
+	case 'DELETE':
+		parse_str(file_get_contents("php://input), $input);
+		if (isset($input['device_id])) {
+			deleteRecord($conn, 'devices', 'device_id', $input['device_id']);
+		}
+		else {
+			jsonResponse(false, "Device ID required for deletion.");
+		}
+		break;
 
-//Handling GET requests
-if($requestMethod == 'GET') {
-	//Use getRecord from functions.php
-	getRecord($conn, 'Devices');
+	default:
+		jsonResponse(false, "Invalid request method.");
 }
-//Handling POST requests
-elseif ($requestMethod == 'POST' {
-	//Capture and sanitize data
-	$deviceID = sanitizeInput($_POST['device_id']);
-	$status = sanitizeInput($_POST['status']);
-
-	//Use updateRecord from functions.php
-	updateRecord($conn, 'Devices', ['status'], ['id'], "si", $status, $deviceID);
-}
-else {
-	//Handle unsupported request methods
-	jsonResponse(false, "Invalid request method.");
-}
-
-//Close connection after finished
-$conn->close();
 ?>
+
 
 
 

@@ -2,6 +2,18 @@
 
 include '../includes/databaseConnection.php';
 
+//Check if the database exists and select it
+function initializeDatabase($conn) {
+	$sql = "CREATE DATABASE IF NOT EXISTS $dbname";
+	if($conn->query($sql) === TRUE {
+		echo "Database '$dbname' created or already exists.<br>";
+		conn->select_db($dbname);
+	}
+	else {
+		die("Error creating database: " . $conn->error . "<br>");
+	}
+}
+
 //Create Devices table in PHP using SQL Script for purposes of redeploying
 
 function createDevicesTable($conn) {

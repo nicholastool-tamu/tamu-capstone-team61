@@ -6,11 +6,11 @@ function cleanInput($data) {
 }
 function jsonResponse($success, $message, $data = []) {
 	header = 'Content-Type: application/json');
-	echo json_encode(array(
+	echo json_encode([
 		'success' => $success,
 		'message' => $message,
 		'data' => $data
-	));
+	]);
 	exit();
 }
 
@@ -21,7 +21,7 @@ function getRecord($conn, $table) {
 	
 	//Check if connection was correct, if so get records
 	if ($result) {
-		$records = array();
+		$records = [];
 		while ($row = $result->fetch_assoc()) {
 			$records[] = $row;
 		}
@@ -69,6 +69,70 @@ function updateRecord($conn, $table, $fields, $conditions, $types, ...$params) {
 		jsonResponse(false, "Failed to update " .$table . ".");
 	}
 	
+	//Close statement to free resources
+	$stmt->close();
+}
+
+function createRecord($conn, $table, $fields, $types, ...$params) {
+	//Error handling for missing inputs
+	if(empty($fields) || empty($params)) {
+		jsonResponse(false, "Missing required fields or parameters");
+	}
+	
+	//Check for correct amount of parameters
+	$expectedParamsCount = strlen($types);
+	if(count($params !== $expectedParamsCount) {
+		jsonResponse(false, "Number of parameters is incorrect.");
+	}
+
+	//Prepare for SQL Query
+	$fieldList = implode(', ', $fields);
+	$placeholders = implode(', ', array_fill(0, count($fields), '?'));
+
+	//Build query and prepare statement
+	$query = "INSERT INTO $table ($fieldList) VALUES ($placeholders)";
+	$stmt = $conn->prepare($query);
+
+	//Check if query preparation was successful
+	if (!$stmt) {
+		jsonResponse(false, "Failed to prepare statement: " . $conn->error);
+	}
+	
+	//Bind parameters, execute and check if successful
+	$stmt->bind_param($types, ...$params);
+
+	if ($stmt->execute()) {
+		jsonResponse(true, ucfirst($table) . " created successfully.");
+	}
+	else {
+		jsonResponse(false, "Failed to create " . $table . ".");
+	}
+
+	//Close statement to free resources
+	$stmt->close();
+}
+
+function deleteRecord($conn, $table, $id_field, $id_value) {
+	//Build query and prepare statement
+	$query = "DELETE FROM $table WHERE $id_field = ?";
+	$stmt = $conn->prepare($query);
+
+	//Check if preparation was successful
+	if (!$stmt) {
+		jsonResponse(false, "Failed to prepare statement: " . $conn->error);
+	}
+
+	//Bind ID to the query
+	$stmt->bind_param("i", $id_value);
+
+	//Execure and check if successful
+	if ($stmt->execute()) {
+		jsonResponse(true, ucfirst($table) . " deleted successfully.");
+	}
+	else {
+		jsonRespose(false, "Failed to delete " . $table . ".");
+	}
+
 	//Close statement to free resources
 	$stmt->close();
 }
