@@ -51,3 +51,20 @@ Plans for this week (10/22-10/29)
 I did a lot of work over the past week on creating the APIs using PHP and created some functions to create tables, as well as GET and POST functions.
 I implemented basic security features, like protection against XSS & SQL injection, but still have not done any validation testing on these functions.
 This week I would like to validate the functions that I have created and make sure that they are working as expected, as they serve as the backbone of the main functions of my subsystem.
+
+Nicholas Tool
+10/29/24
+
+Plans for this week (10/29-11/5)
+In the past week, I did my validation testing for the GET and POST functions and made sure that they were working correctly.
+My goal for this week is to write a DELETE function, as well as handle device creation and user creation in the tables in the database, as well as continuing to validate
+
+
+Nicholas Tool
+11/5/24
+
+Plans for this week (11/5-11/12)
+I finished writing the bulk of my functions, and any functions that will be added should be small helper functions.
+My goal this week is to really focus on validation testing, creating different test files, making sure that errors are being handled correctly, and ensure that everything is working as intended.
+Our team has our final presentation coming up, so as a team we will probably be working on our final presentation for that.
+
