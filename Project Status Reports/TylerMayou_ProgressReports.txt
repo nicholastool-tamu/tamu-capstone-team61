@@ -98,3 +98,18 @@ Plans for this week:
 Continue Programming ESP32
 Start Circuit/Component Testing on Breadboard
 
+
+
+Week 13:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+11/12/2024
+
+Plans for this week:
+Continue Programming ESP32 for Bluetooth and temperature sensor
+Start PCB soldering and testing when board is received
+
+
