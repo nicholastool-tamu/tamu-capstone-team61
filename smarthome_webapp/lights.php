@@ -43,6 +43,7 @@
         .bulb-icon {
             font-size: 200px;
             margin: 20px 0;
+            opacity: 0.3;
         }
     </style>
 </head>

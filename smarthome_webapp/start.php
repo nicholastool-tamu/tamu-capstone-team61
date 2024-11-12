@@ -70,9 +70,9 @@ session_start();
     <!-- Main content container -->
     <div class="container">
         <!-- Main heading for the page -->
-        <h1>Welcome to Smart Home</h1>
+        <h1>Welcome to SHAPP</h1>
         <!-- Subheading/description text -->
-        <p>Control your home from anywhere, anytime.</p>
+        <p>Control your IOT devices.</p>
 
         <!-- Container for navigation buttons -->
         <div class="buttons">

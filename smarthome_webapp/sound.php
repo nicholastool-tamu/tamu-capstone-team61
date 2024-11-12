@@ -27,10 +27,7 @@
     <?php include 'common_header.php'; ?>
 
     <div class="speaker-container">
-        <div class="speaker-icon">🔊</div>
-        
         <div class="volume-control">
-            <span>🔈</span>
             <input type="range" 
                    class="volume-slider" 
                    min="0" 

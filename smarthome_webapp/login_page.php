@@ -37,8 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     } else {
         logError(__FILE__, $result['message']);
-        header("Location: errors.php");
-        exit();
+        $error_message = "Invalid username or password";
     }
 }
 
@@ -54,7 +53,7 @@ if (isset($_SESSION['signup_success'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Home - Login</title>
+    <title>SHAPP - Login</title>
     <style>
         /* Main page styling */
         body {
@@ -142,6 +141,11 @@ if (isset($_SESSION['signup_success'])) {
         <?php if (isset($success_message)): ?>
             <div class="success-message" style="color: green; text-align: center; margin-bottom: 20px;">
                 <?php echo htmlspecialchars($success_message); ?>
+            </div>
+        <?php endif; ?>
+        <?php if (isset($error_message)): ?>
+            <div class="error-message" style="color: red; text-align: center; margin-bottom: 20px;">
+                <?php echo htmlspecialchars($error_message); ?>
             </div>
         <?php endif; ?>
         <form action="login_page.php" method="POST">

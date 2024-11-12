@@ -10,9 +10,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Home Dashboard</title>
+    <title>Dashboard</title>
     <?php 
-    $pageTitle = "Smart Home Dashboard";
+    $pageTitle = "Dashboard";
     include 'common_styles.php';
     ?>
     <style>
