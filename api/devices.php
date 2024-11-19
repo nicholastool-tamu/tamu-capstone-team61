@@ -1,7 +1,7 @@
 <?php
 //Include files for connection and basic functions
-include '../includes/databaseConnection.php';
-include '../includes/functions.php';
+include_once '../includes/databaseConnection.php';
+include_once '../includes/functions.php';
 
 //Content type for UI client
 header('Content-Type: application/json');
@@ -9,7 +9,7 @@ header('Content-Type: application/json');
 switch ($_SERVER['REQUEST_METHOD']) {
 	case 'GET':
 		//Check if a specific device is being requested, otherwise give data for all devices
-		if (isset($_GET('device_id'])) {
+		if (isset($_GET['device_id'])) {
 			getRecord($conn, 'devices', ['device_id' => $_GET['device_id']]);
 		}
 		else {
@@ -37,8 +37,8 @@ switch ($_SERVER['REQUEST_METHOD']) {
 		}
 		break;
 	case 'DELETE':
-		parse_str(file_get_contents("php://input), $input);
-		if (isset($input['device_id])) {
+		parse_str(file_get_contents("php://input"), $input);
+		if (isset($input['device_id'])) {
 			deleteRecord($conn, 'devices', 'device_id', $input['device_id']);
 		}
 		else {

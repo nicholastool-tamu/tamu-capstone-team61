@@ -1,11 +1,11 @@
-<?php
+\<?php
 
 //Function for cleaning inputs to prevent injection
 function cleanInput($data) {
 	return htmlspecialchars(stripslashes(trim($data)));
 }
 function jsonResponse($success, $message, $data = []) {
-	header = 'Content-Type: application/json');
+	header('Content-Type: application/json');
 	echo json_encode([
 		'success' => $success,
 		'message' => $message,
@@ -17,7 +17,7 @@ function jsonResponse($success, $message, $data = []) {
 function getRecord($conn, $table) {
 	//Build sql query to select all records
 	$query = "SELECT * FROM $table";
-	$result = $conn->query(query);
+	$result = $conn->query($query);
 	
 	//Check if connection was correct, if so get records
 	if ($result) {
@@ -25,16 +25,16 @@ function getRecord($conn, $table) {
 		while ($row = $result->fetch_assoc()) {
 			$records[] = $row;
 		}
-		jsonResponse(true, ucfirst($table) . " retreived successfully.", $records);
+		jsonResponse(true, ucfirst($table) . " retrieved successfully.", $records);
 	}
 	else {
 		jsonResponse(false, "Failed to retreive " . $table . ".");
+	}
 }
-
 function updateRecord($conn, $table, $fields, $conditions, $types, ...$params) {
 	//Error handling conditional statements
 	//Check if any of the fields are empty, throw error if any fields are empty
-	if (empty($fields) || empty($conditions) || (empty($params)) {
+	if (empty($fields) || empty($conditions) || empty($params)) {
 		jsonResponse(false, "Missing required fields, conditions, or parameters.");
 	}
 	
@@ -47,7 +47,7 @@ function updateRecord($conn, $table, $fields, $conditions, $types, ...$params) {
 
 
 	//Prepare fields and conditions for the SQL query
-	$fieldSet = implode(' = ?, ' $fields) . ' = ?';
+	$fieldSet = implode(' = ?, ', $fields) . ' = ?';
 	$conditionSet = implode(' = ? AND ', $conditions) . ' = ?';
 
 	//Build the query and connect
@@ -59,7 +59,7 @@ function updateRecord($conn, $table, $fields, $conditions, $types, ...$params) {
 		jsonResponse(false, "Failed to prepare statement: " . $conn->error);
 	}
 	//Bind parameters to query
-	stmt->bind_param($types, ...$params);
+	$stmt->bind_param($types, ...$params);
 
 	//Execute and check if successful
 	if ($stmt->execute()) {
@@ -81,7 +81,7 @@ function createRecord($conn, $table, $fields, $types, ...$params) {
 	
 	//Check for correct amount of parameters
 	$expectedParamsCount = strlen($types);
-	if(count($params !== $expectedParamsCount) {
+	if(count($params) !== $expectedParamsCount) {
 		jsonResponse(false, "Number of parameters is incorrect.");
 	}
 
@@ -125,12 +125,12 @@ function deleteRecord($conn, $table, $id_field, $id_value) {
 	//Bind ID to the query
 	$stmt->bind_param("i", $id_value);
 
-	//Execure and check if successful
+	//Execute and check if successful
 	if ($stmt->execute()) {
 		jsonResponse(true, ucfirst($table) . " deleted successfully.");
 	}
 	else {
-		jsonRespose(false, "Failed to delete " . $table . ".");
+		jsonResponse(false, "Failed to delete " . $table . ".");
 	}
 
 	//Close statement to free resources

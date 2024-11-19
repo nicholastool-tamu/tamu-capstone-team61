@@ -1,6 +1,8 @@
 <?php
+
+
 //Load sensitive information through .env file
-$env = parse_ini_file('.env');
+$env = parse_ini_file('/var/www/html/.env');
 
 $servername = $env['DB_HOST'];
 $username = $env['DB_USER'];
@@ -12,7 +14,6 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 //Check connection, show error if connection fails
 if ($conn->connect_error) {
-	die ("Connection failed: " . $conn->connect-error);
-}
-echo "Connected successfully to The Smart Home Database!"; 
+	die("Connection failed");
+} 
 ?>

@@ -1,12 +1,12 @@
 <?php
 header('Content-Type: application/json');
 
-include '../includes/databaseConnection.php';
-include '../includes/functions.php';
+include_once '../includes/databaseConnection.php';
+include_once '../includes/functions.php';
 
 switch ($_SERVER['REQUEST_METHOD']) {
 	case 'GET':
-		if (isset($_GET['user_id])) {
+		if (isset($_GET['user_id'])) {
 			getRecord($conn, 'users', ['user_id' => $_GET['user_id']]);
 		}
 		else {
@@ -28,7 +28,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 			//Create a new user
 			if (isset($_POST['username'], $_POST['email'],$_POST['password'], $_POST['status'])) {
 				//Hash password before storing it
-				$hashed_password = password_has($_POST['password'], PASSWORD_BYCRYPT);
+				$hashed_password = password_hash($_POST['password'], PASSWORD_BCRYPT);
 
 				//Create new user
 				createRecord($conn, 'users', ['username', 'email', 'password', 'status'], 'ssss', $_POST['username'], $_POST['email'], $hashed_password, $_POST['status']);
@@ -41,7 +41,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 	case 'DELETE':
 		parse_str(file_get_contents("php://input"), $input);
 		if (isset($input['user_id'])) {
-			deleteRecord($conn, 'users', 'user_id', $input['user_id]);
+			deleteRecord($conn, 'users', 'user_id', $input['user_id']);
 		}
 		else {
 			jsonResponse(false, "User ID required for deletion.");
@@ -49,7 +49,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 		break;
 
 	default:
-		jsonResponse(false, "Invalid request method."):
+		jsonResponse(false, "Invalid request method.");
 }
 ?>
 
