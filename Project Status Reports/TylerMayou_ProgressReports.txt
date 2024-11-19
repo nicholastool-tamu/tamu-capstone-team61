@@ -113,3 +113,14 @@ Continue Programming ESP32 for Bluetooth and temperature sensor
 Start PCB soldering and testing when board is received
 
 
+Week 14:
+
+ECEN 403-905
+
+Tyler Mayou
+831006936
+11/19/2024
+
+Plans for this week:
+Get Ready for Demo
+Program ESP32 for temp sensor and Bluetooth
