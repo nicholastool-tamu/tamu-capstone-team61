@@ -1,6 +1,5 @@
 <?php
 function addUser($username, $password) {
-    // Load configuration
     $config = require_once 'config.php';
     
     // Create connection
@@ -13,7 +12,7 @@ function addUser($username, $password) {
 
     // Check connection
     if ($conn->connect_error) {
-        return ["success" => false, "message" => "Connection failed: " . $conn->connect_error];
+        return ["success" => false, "message" => "Connection failed"];
     }
 
     // Check if username already exists
@@ -36,7 +35,7 @@ function addUser($username, $password) {
     if ($stmt->execute()) {
         return ["success" => true, "message" => "User successfully created"];
     } else {
-        return ["success" => false, "message" => "Error creating user: " . $stmt->error];
+        return ["success" => false, "message" => "Error creating user"];
     }
 }
 ?>

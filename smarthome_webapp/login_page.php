@@ -1,47 +1,19 @@
 <?php
-// Turn off all error reporting for display
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-
-// But ensure errors are still being logged
-error_reporting(E_ALL);
-
-// Start session first
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Include only the logging functions
-require_once 'includes/logging_functions.php';
-
-// Custom error handler to capture all errors/notices
-set_error_handler(function($errno, $errstr, $errfile, $errline) {
-    if (!(error_reporting() & $errno)) {
-        return false;
-    }
-    
-    $message = sprintf("%s on line %d: %s", basename($errfile), $errline, $errstr);
-    logError($errfile, $message);
-    return true;
-});
+session_start();
 
 require_once 'login_func.php';
 
-// Check if form was submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $result = attemptLogin($_POST['username'], $_POST['password']);
     
     if ($result['success']) {
-        logNotice(__FILE__, "Successfully logged in!", 'success');
         header("Location: home_dash.php");
         exit();
     } else {
-        logError(__FILE__, $result['message']);
         $error_message = "Invalid username or password";
     }
 }
 
-// Check for signup success message
 if (isset($_SESSION['signup_success'])) {
     $success_message = "Account created successfully! Please login.";
     unset($_SESSION['signup_success']);
