@@ -47,7 +47,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
     <div class="dashboard">
         <button class="dashboard-btn" onclick="window.location.href='lights.php'">
-            Lights
+            Light
         </button>
         <button class="dashboard-btn" onclick="window.location.href='sound.php'">
             Speaker

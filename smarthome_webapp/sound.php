@@ -9,32 +9,102 @@
     include 'common_styles.php';
     ?>
     <style>
-        /* Keep only the speaker-specific styles */
+        body {
+            background-color: black;
+            margin: 0;
+            padding: 0;
+        }
+
         .speaker-container {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 30px;
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
+            min-height: 100vh;
+            color: white;
         }
 
-        /* Rest of the speaker styles... */
+        .speaker-emoji {
+            font-size: 100px;
+            position: absolute;
+            top: 20vh;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .volume-control {
+            position: absolute;
+            top: calc(20vh + 180px); /* After emoji + margin */
+            width: 100%;
+            text-align: center;
+        }
+
+        .volume-value {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: white;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .volume-slider {
+            width: 280px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #555;
+            border-radius: 2px;
+            margin: 0;
+            padding: 0;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #6200EE;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .playback-controls {
+            position: absolute;
+            top: calc(20vh + 300px); /* After volume controls + margin */
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 40px;
+            border: none;
+            background-color: #6200EE;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
     <?php include 'common_header.php'; ?>
 
     <div class="speaker-container">
+        <div class="speaker-emoji">🔊</div>
+        
         <div class="volume-control">
+            <div class="volume-value" id="volumeValue">Volume: 50%</div>
             <input type="range" 
                    class="volume-slider" 
                    min="0" 
                    max="100" 
                    value="50" 
                    id="volumeSlider">
-            <span class="volume-value" id="volumeValue">50%</span>
         </div>
 
         <div class="playback-controls">
@@ -53,7 +123,7 @@
         // Volume slider control
         volumeSlider.addEventListener('input', function() {
             const value = this.value;
-            volumeValue.textContent = value + '%';
+            volumeValue.textContent = `Volume: ${value}%`;
             // Here you would typically add code to actually change the speaker volume
         });
 

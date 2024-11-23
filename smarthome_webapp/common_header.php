@@ -1,6 +1,4 @@
-<!-- Create a new file for the common header elements -->
 <div class="header">
-    <button class="back-btn" onclick="window.location.href='home_dash.php'">🏠</button>
     <h1><?php echo $pageTitle; ?></h1>
     <button class="menu-btn" onclick="toggleMenu()">☰</button>
 </div>
