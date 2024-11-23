@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Home - Usage</title>
     <?php 
-    $pageTitle = "Light Control";
+    $pageTitle = "Usage";
     include 'common_styles.php';
     ?>
 </head>

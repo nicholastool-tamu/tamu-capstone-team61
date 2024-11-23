@@ -16,7 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             if ($result['success']) {
                 $_SESSION['signup_success'] = true;
-                header("Location: login.php");
+                header("Location: login_page.php");
                 exit();
             } else {
                 $error_message = $result['message'];
