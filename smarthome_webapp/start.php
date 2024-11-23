@@ -6,79 +6,83 @@ session_start();
 <!DOCTYPE html> <!-- Declares this as an HTML5 document -->
 <html lang="en"> <!-- Sets the language of the document to English -->
 <head>
-    <!-- Specifies character encoding for the document -->
+    <!-- Meta tags for character encoding and responsive viewport -->
     <meta charset="UTF-8">
-    <!-- Makes the page responsive by setting viewport properties -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Sets the page title shown in browser tab -->
     <title>Smart Home Automation</title>
-    <!-- CSS styles begin here -->
+
     <style>
-        /* Applies to entire page body */
+        /* Root styles for the entire page
+         * Uses flexbox for centered layout
+         * Sets minimum height to full viewport
+         */
         body {
-            font-family: Arial, sans-serif;  /* Sets the default font */
-            display: flex;                   /* Uses flexbox for layout */
-            flex-direction: column;          /* Stacks elements vertically */
-            align-items: center;             /* Centers items horizontally */
-            justify-content: center;         /* Centers items vertically */
-            min-height: 100vh;               /* Makes body at least full viewport height */
-            margin: 0;                       /* Removes default margin */
-            background-color: #f0f2f5;       /* Sets light gray background */
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
         }
 
-        /* Styles for the main content container */
+        /* Main content container
+         * White box with rounded corners and shadow
+         */
         .container {
-            text-align: center;              /* Centers text content */
-            padding: 20px;                   /* Adds space inside container */
-            background-color: white;         /* White background for container */
-            border-radius: 10px;             /* Rounds container corners */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Adds subtle shadow */
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        /* Base styles for both buttons */
+        /* Base button styles
+         * Used for both login and signup buttons
+         * Includes hover animation
+         */
         .button {
-            display: inline-block;           /* Makes links behave like buttons */
-            padding: 12px 24px;              /* Adds space inside buttons */
-            margin: 10px;                    /* Adds space between buttons */
-            border: none;                    /* Removes default border */
-            border-radius: 5px;              /* Rounds button corners */
-            cursor: pointer;                 /* Shows hand cursor on hover */
-            font-size: 16px;                 /* Sets button text size */
-            text-decoration: none;           /* Removes underline from links */
-            transition: background-color 0.3s; /* Smooth color transition on hover */
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            transition: background-color 0.3s;
         }
 
-        /* Specific styles for login button */
+        /* Login button specific styles - green theme */
         .login-btn {
-            background-color: #4CAF50;       /* Green background */
-            color: white;                    /* White text */
+            background-color: #4CAF50;
+            color: white;
         }
 
-        /* Specific styles for signup button */
+        /* Signup button specific styles - blue theme */
         .signup-btn {
-            background-color: #2196F3;       /* Blue background */
-            color: white;                    /* White text */
+            background-color: #2196F3;
+            color: white;
         }
 
-        /* Hover effect for buttons */
+        /* Subtle opacity reduction on button hover */
         .button:hover {
-            opacity: 0.9;                    /* Slightly fades button when hovered */
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
-    <!-- Main content container -->
+    <!-- Main content wrapper -->
     <div class="container">
-        <!-- Main heading for the page -->
+        <!-- Application title and description -->
         <h1>Welcome to SHAPP</h1>
-        <!-- Subheading/description text -->
         <p>Control your IOT devices.</p>
 
-        <!-- Container for navigation buttons -->
+        <!-- Navigation buttons container -->
         <div class="buttons">
-            <!-- Login button linking to login page -->
+            <!-- Login and signup links styled as buttons -->
             <a href="login_page.php" class="button login-btn">Login</a>
-            <!-- Sign up button linking to signup page -->
             <a href="sign_up.php" class="button signup-btn">Sign Up</a>
         </div>
     </div>

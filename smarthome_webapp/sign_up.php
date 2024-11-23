@@ -1,19 +1,20 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 
+// Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     try {
         require_once 'add_user.php';
         
-        // Basic validation
+        // Validate password requirements
         if (strlen($_POST['password']) < 8) {
             $error_message = "Password must be at least 8 characters long";
         } elseif ($_POST['password'] !== $_POST['confirm_password']) {
             $error_message = "Passwords do not match";
         } else {
+            // Attempt to add the user to the database
             $result = addUser($_POST['username'], $_POST['password']);
             
+            // If successful, redirect to login page
             if ($result['success']) {
                 $_SESSION['signup_success'] = true;
                 header("Location: login_page.php");
@@ -23,8 +24,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
     } catch (Exception $e) {
-        $error_message = "System error: " . $e->getMessage();
-        error_log("Sign up error: " . $e->getMessage());
+        // Display generic error message
+        $error_message = "An error occurred during sign up. Please try again.";
     }
 }
 ?>
@@ -36,7 +37,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Home - Sign Up</title>
     <style>
-        /* Reuse the same styling as login.php */
         body {
             font-family: Arial, sans-serif;
             display: flex;

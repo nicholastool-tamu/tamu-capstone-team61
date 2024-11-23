@@ -9,12 +9,16 @@
     include 'common_styles.php';
     ?>
     <style>
+        /* Dark theme background */
         body {
             background-color: black;
             margin: 0;
             padding: 0;
         }
 
+        /* Main container for speaker controls
+         * Uses flexbox for centered column layout
+         */
         .speaker-container {
             position: relative;
             display: flex;
@@ -24,6 +28,7 @@
             color: white;
         }
 
+        /* Large speaker emoji positioned at top of screen */
         .speaker-emoji {
             font-size: 100px;
             position: absolute;
@@ -32,13 +37,15 @@
             transform: translateX(-50%);
         }
 
+        /* Volume control section positioning and layout */
         .volume-control {
             position: absolute;
-            top: calc(20vh + 180px); /* After emoji + margin */
+            top: calc(20vh + 180px);
             width: 100%;
             text-align: center;
         }
 
+        /* Volume display text styling */
         .volume-value {
             font-size: 24px;
             margin-bottom: 16px;
@@ -47,15 +54,15 @@
             pointer-events: none;
         }
 
+        /* Custom styling for volume slider
+         * Includes webkit-specific styles for the slider thumb
+         */
         .volume-slider {
             width: 280px;
             height: 4px;
             -webkit-appearance: none;
             background: #555;
             border-radius: 2px;
-            margin: 0;
-            padding: 0;
-            display: block;
             margin: 0 auto;
         }
 
@@ -68,13 +75,15 @@
             cursor: pointer;
         }
 
+        /* Play/Pause button container */
         .playback-controls {
             position: absolute;
-            top: calc(20vh + 300px); /* After volume controls + margin */
+            top: calc(20vh + 300px);
             left: 50%;
             transform: translateX(-50%);
         }
 
+        /* Circular play/pause button styling */
         .control-btn {
             width: 80px;
             height: 80px;
@@ -115,29 +124,27 @@
     </div>
 
     <script>
+        // Get references to DOM elements
         const volumeSlider = document.getElementById('volumeSlider');
         const volumeValue = document.getElementById('volumeValue');
         const playPauseBtn = document.getElementById('playPauseBtn');
         let isPlaying = false;
 
-        // Volume slider control
+        // Update volume display when slider moves
         volumeSlider.addEventListener('input', function() {
             const value = this.value;
             volumeValue.textContent = `Volume: ${value}%`;
-            // Here you would typically add code to actually change the speaker volume
         });
 
-        // Play/Pause toggle
+
         function togglePlayPause() {
             isPlaying = !isPlaying;
             if (isPlaying) {
                 playPauseBtn.innerHTML = '⏸';
                 playPauseBtn.classList.add('playing');
-                // Here you would typically add code to start playing music
             } else {
                 playPauseBtn.innerHTML = '▶';
                 playPauseBtn.classList.remove('playing');
-                // Here you would typically add code to pause music
             }
         }
     </script>
