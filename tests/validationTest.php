@@ -18,12 +18,12 @@ function addtestCase(&$response, $title, $results) {
 			"test" => $title,
 			"results" => $results,
 			"timestamp" => $timestamp
-	];
-	echo "[$timestamp] Test Completed: {$results['status']}\n";
-	if ($results['status'] === 'fail') {
-		echo "Error message: {$results['message]}\n";
-	}
-	echo "------------------------\n";
+		];
+		echo "[$timestamp] Test Completed: {$results['status']}\n";
+		if ($results["status"] === "fail") {
+			echo "Error message: {$results['message']}\n";
+		}
+		echo "------------------------\n";
 	}
 	catch (Exception $e) { //Handle error handling and allow program to continue running when errors are thrown
 		$error_result = ["status" => "error", "message" => "Test execution error: " . $e->getMessage()];
