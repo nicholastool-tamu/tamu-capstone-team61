@@ -14,14 +14,25 @@ function addtestCase(&$response, $title, $results) {
 	$timestamp = date('Y-m-d H:i:s');
 	echo "\n[$timestamp] Running $title\n"; //Print output with timestamp to compare to jsonResponse 
 	try {
+		//Unwrap results if nested
+		if (is_array($results) && count($results) === 1 && isset($results[0])) {
+			$results = $results[0];
+		}
+
 		$response[] = [
 			"test" => $title,
 			"results" => $results,
 			"timestamp" => $timestamp
 		];
-		echo "[$timestamp] Test Completed: {$results['status']}\n";
-		if ($results["status"] === "fail") {
-			echo "Error message: {$results['message']}\n";
+		if (isset($results['status'])) {
+			echo "[$timestamp] Test completed: {$results['status']}\n";
+			if ($results['status'] === 'fail' && isset($results['message'])) {
+				echo "Error message: {$results['message']}\n";
+			}
+		}
+		else {
+			echo "[$timestamp] Test Completed with unknown status\n";
+			echo "Results: ".  print_r($results, true) . "\n";
 		}
 		echo "------------------------\n";
 	}
@@ -294,8 +305,11 @@ function testCreateDeviceApi($apiUrl) {
 	$data = ['device_name' => 'Test Light', 'device_type' => 'Light', 'status' => 'off', 'user_id' => 1];
 	$response = simulateHttpRequest('POST', $apiUrl . '/devices.php', $data);
 
+	if (!isset($response['response']) || !is_array($response['response'])) {
+		return ["status" => "fail", "message" => "invalid or empty API response", "api_response" => $response];
+	}
 
-	if ($response['http_code'] === 200 && $response['response']['success']) {
+	if ($response['http_code'] === 200 && isset($response['response']['success']) &&  $response['response']['success']) {
 		return ["status" => "pass", "message" => "Device created successfully via API.", "api_response" => $response['response']];
 	}
 	else {
@@ -307,7 +321,11 @@ function testCreateDeviceApi($apiUrl) {
 function testFetchAllDevicesApi($apiUrl) {
 	$response = simulateHttpRequest('GET', $apiUrl . '/devices.php');
 
-	if ($response['http_code'] === 200 && $response['response']['success']) {
+	if (!isset($response['response'] || !is_array($response['response'])) {
+		return ["status" => "fail", "message" => "Invalid or empty API response", "api_response" => $response];
+	}
+
+	if ($response['http_code'] === 200 && isset($resposne['response']['success'] && $response['response']['success']) {
 		return ["status" => "pass", "message" => "Fetched all devices via API.", "api_response" => $response['response']];
 	}
 	else {
@@ -320,7 +338,11 @@ function testUpdateUserApi($apiUrl) {
 	$data = ['user_id' => 1, 'username' => 'updated_user', 'email' => 'updated_email@example.com', 'status' => 'active'];
 	$response = simulateHttpRequest('PUT', $apiUrl . '/users.php', $data);
 
-	if ($response['http_code'] === 200 && $response['response']['success']) {
+	if (!isset($response['response']) || !is_array($response['response'])) {
+		return ["status" => "fail", "message" => "Invalid or empty API response", "api_response" => $response];
+	}
+
+	if ($response['http_code'] === 200 && isset($response['response']['success']) && $response['response']['success']) {
 		return ["status" => "pass", "message" => "User data updated successfully.", "api_response" => $response['response']];
 	}
 	else {
@@ -333,7 +355,11 @@ function testUpdateDeviceApi($apiUrl) {
 	$data = ['device_id' => 1, 'device_name' => 'Updated Device Name', 'status' => 'on'];
 	$response = simulateHttpRequest('PUT', $apiUrl . '/devices.php', $data);
 
-	if ($response['http_code'] === 200 && $response['response']['success']) {
+	if (!isset($response['response']) || !is_array($response['response'])) {
+		return ["status" => "fail", "message" => "Invalid or empty API response", "api_response" => $response];
+	}
+
+	if ($response['http_code'] === 200 && isset($response['response']['success']) && $response['response']['success']) {
 		return ["status" => "pass", "message" => "Device updated successfully.", "api_response" => $response['response']];
 	}
 	else {
