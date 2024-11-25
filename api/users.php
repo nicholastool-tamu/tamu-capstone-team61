@@ -13,7 +13,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 			getRecord($conn, 'users');
 		}
 		break;
-	
+
 	case 'POST':
 		if (isset($_POST['action']) && $_POST['action'] === 'update') {
 			//Update user status
@@ -38,6 +38,17 @@ switch ($_SERVER['REQUEST_METHOD']) {
 			}
 		}
 		break;
+	case 'PUT':
+	//Handle PUT requests to update user data
+		parse_str(file_get_contents("php://input"), $input);
+		if (isset($input['user_id']) && isset($input['fields']) && isset($input['values']) && isset($input['types'])) {
+			updateEntity($conn, 'users', $input['fields'], $input['values'], $input['types'], 'user_id', $input['user_id']);
+		}
+		else {
+			jsonResponse(false, "User ID, fields, values, and types required for updating.");
+		}
+	break;
+
 	case 'DELETE':
 		parse_str(file_get_contents("php://input"), $input);
 		if (isset($input['user_id'])) {

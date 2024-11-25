@@ -1,24 +1,52 @@
-\<?php
+<?php
 
 //Function for cleaning inputs to prevent injection
 function cleanInput($data) {
 	return htmlspecialchars(stripslashes(trim($data)));
 }
 function jsonResponse($success, $message, $data = []) {
+	//Log json responses to a file
+	file_put_contents('responses.log', json_encode([
+		'success' => $success,
+		'message' => $message,
+		'data' => $data,
+		'timestamp' => date('Y-m-d H:i:s')
+	]) . PHP_EOL, FILE_APPEND);
+
+	//Output responses to web server
 	header('Content-Type: application/json');
 	echo json_encode([
 		'success' => $success,
 		'message' => $message,
 		'data' => $data
-	]);
-	exit();
+	]) . "<br>"; //Adds line break
 }
 
-function getRecord($conn, $table) {
+function getRecord($conn, $table, $conditions = []) {
 	//Build sql query to select all records
 	$query = "SELECT * FROM $table";
-	$result = $conn->query($query);
+	$params = [];
+	$types = "";
+
+	if (!empty($conditions)) {
+		$whereClause = [];
+		foreach ($conditions as $key => $value) {
+			$whereClause[] = "$key = ?";
+			$params[] = $value;
+			$types .= is_int($value) ? "i" : "s"; //Determines if type is integer or string dynamically
+		}
+		$query .= " WHERE " . implode(" AND ", $whereClause);
+	}
 	
+	$stmt = $conn->prepare($query);
+
+	if (!empty($params)) {
+		$stmt->bind__param($types, ...$params);
+	}
+
+	$stmt->execute();
+	$result = $stmt->get_result();
+
 	//Check if connection was correct, if so get records
 	if ($result) {
 		$records = [];
@@ -30,6 +58,7 @@ function getRecord($conn, $table) {
 	else {
 		jsonResponse(false, "Failed to retreive " . $table . ".");
 	}
+	$stmt->close();
 }
 function updateRecord($conn, $table, $fields, $conditions, $types, ...$params) {
 	//Error handling conditional statements
@@ -70,6 +99,42 @@ function updateRecord($conn, $table, $fields, $conditions, $types, ...$params) {
 	}
 	
 	//Close statement to free resources
+	$stmt->close();
+}
+
+function updateEntity($conn, $table, $fields, $values, $id_field, $id_value) {
+	if (empty($fields) || empty($values) || empty($id_value)) {
+		jsonResponse(false, "Fields, values and ID value are required.");
+	}
+
+	if (count($fields) !== count($values)) {
+		jsonresponse(false, "Number of fields and values must match.");
+	}
+
+	$fieldSet = implode(' = ?, ', $fields). ' = ?';
+	$query = "UPDATE $table SET $fieldSet WHERE $id_field = ?";
+	$stmt = $conn->prepare($query);
+
+	if (!stmt) {
+		jsonResponse(false, "Failed to prepare statement: " . $conn->error);
+	}
+
+	//Dynamically determine parameter types
+	$types = ""
+	foreach ($values as $value) {
+		$types .= is_int($value) ? "i" : "s";
+	}
+	$types .= is_int($id_value) ? "i" : "s";
+	$params = array_merge($values, [$id_value]);
+	$stmt->bind_param($types, ...$params);
+
+	if($stmt->execute()) {
+		jsonResponse(true, ucfirst($table) . "updated successfully.");
+	}
+	else {
+		jsonResponse(false, "Failed to update " . $table . ".");
+	}
+
 	$stmt->close();
 }
 

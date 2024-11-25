@@ -16,6 +16,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 			getRecord($conn, 'devices');
 		}
 		break;
+
 	case 'POST':
 		if (isset($_POST['action']) && $_POST['action'] === 'update') {
 		//Update device status
@@ -36,6 +37,18 @@ switch ($_SERVER['REQUEST_METHOD']) {
 			}
 		}
 		break;
+
+	case 'PUT':
+		//Handle PUT requests for updating devices
+		parse_str(file_get_contents("php://input"), $input);
+		if (isset($input['device_id']) && isset($input['fields']) && isset($input['values']) && isset($input['types'])) {
+			updateDevice($conn, 'devices', $input['fields'], $input['values'], $input['types'], $input['device_id']);
+		}
+		else {
+			jsonResponse(false, "Device ID, fields, values, and types are required for updating.");
+		}
+		break;
+
 	case 'DELETE':
 		parse_str(file_get_contents("php://input"), $input);
 		if (isset($input['device_id'])) {
