@@ -120,7 +120,7 @@ function updateEntity($conn, $table, $fields, $values, $id_field, $id_value) {
 	}
 
 	//Dynamically determine parameter types
-	$types = ""
+	$types = "";
 	foreach ($values as $value) {
 		$types .= is_int($value) ? "i" : "s";
 	}

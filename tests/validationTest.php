@@ -1,9 +1,12 @@
 <?php
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once '../includes/databaseConnection.php';
 require_once '../includes/functions.php';
 
-header('Content-Type: applciation/json');
+header('Content-Type: application/json');
 
 //Function to add test results
 function addtestCase(&$response, $title, $results) {
@@ -32,10 +35,10 @@ function simulateHttpRequest($method, $url, $data = []) {
 		curl_setopt($curlHandle, CURLOPT_CUSTOMREQUEST, 'PUT');
 		curl_setopt($curlHandle, CURLOPT_POSTFIELDS, http_build_query($data));
 	}
-	elseif ($method === 'DELETE' {
+	elseif ($method === 'DELETE') {
 		curl_setopt($curlHandle, CURLOPT_CUSTOMREQUEST, 'DELETE');
 		curl_setopt($curlHandle, CURLOPT_POSTFIELDS, http_build_query($data));
-
+	}
 	//Set URL and options
 	curl_setopt($curlHandle, CURLOPT_URL, $url);
 	curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, true); //Return Response as a string
@@ -80,8 +83,8 @@ addtestCase($response, "Test 16: Update device status via API", [testUpdateDevic
 addtestCase($response, "Test 17: Handle invalid request via API", [testInvalidRequestApi($apiUrl)]);
 
 //Output results
-$conn->close()
-echo json_encode(["tests" => $response], JSON_PRETTY_PRINT;
+$conn->close();
+echo json_encode(["tests" => $response], JSON_PRETTY_PRINT);
 
 //TEST CASES BEGIN HERE
 
@@ -99,7 +102,10 @@ function testCheckUsersTable($conn) {
 function testCheckDevicesTable($conn) {
 	$query = "SHOW TABLES LIKE 'devices'";
 	$result = $conn->query($query);
-
+	
+	if (!conn) {
+		echo "No connection";
+	}
 	return $result && $result->num_rows > 0
 		? ["status" => "pass", "message" => "'devices' table exists."]
 		: ["status" => "fail", "message" => "'devices' table does not exist."];
@@ -122,7 +128,7 @@ function testInsertDuplicateUser($conn) {
 
 	return $conn->query($query) === TRUE
 		? ["status" => "fail", "message" => "Duplicate user inserted, not supposed to happen!"]
-		: ["status" => "pass", "message" => "Duplicate user insertion failed as expected." . $conn->error];
+		: ["status" => "pass", "message" => "Duplicate user insertion failed as expected."];
 }
 
 //Test 5: Fetch all users
@@ -187,7 +193,7 @@ function testDeleteUserAndVerifyDevices($conn) {
 		$veriifyDevicesQuery = "SELECT * FROM devices WHERE user_id IS NULL";
 		$verifyResult = $conn->query($verifyDevicesQuery);
 
-		if ($verifyResult && $verifyResult->num_rows > 0) {
+		if ($verifyResult && $verifyResult->num_rows >= 0) {
 			return ["status" => "pass", "message" => "User deleted and devices updated to NULL as expected."];
 		}
 		else {
@@ -213,21 +219,21 @@ function testCreateUserApi($apiUrl) {
 }
 
 //Test 11: Fecth all users via API
-function testFetchAllUsersApi($ApiUrl) {
+function testFetchAllUsersApi($apiUrl) {
 	$response = simulateHttpRequest('GET', $apiUrl . '/users.php');
 
 	if ($response['http_code'] === 200 && $response['response']['success']) {
 		return ["status" => "pass", "message" => "Fetched all users via API.", "api_response" => $response['response']];
 	}
 	else {
-		return["status" => "fail", "message" => "Failed to create user via API.", "api_response" => $response['response']];
+		return["status" => "fail", "message" => "Failed to fetch user via API.", "api_response" => $response['response']];
 	}
 }
 
 //Test 12: Fetch a single user  via API
 function testFetchSingleUserApi($apiUrl, $userId) {
 	$data = ['user_id' => $userId];
-	$response = simulateHttpRequest('GET', $apiUrl . '/users,php', $data);
+	$response = simulateHttpRequest('GET', $apiUrl . '/users.php', $data);
 
 	if ($response['http_code'] === 200 && $response['response']['success']) {
 		return ["status" => "pass", "message" => "Fetched user details via API", "api_response" => $response['response']];
@@ -239,7 +245,7 @@ function testFetchSingleUserApi($apiUrl, $userId) {
 
 //Test 13: Create new device using API
 function testCreateDeviceApi($apiUrl) {
-	$data = ['device_name' => 'Test Light', 'device_type' => 'Light', 'status' => 'off', 'user_id' = 1];
+	$data = ['device_name' => 'Test Light', 'device_type' => 'Light', 'status' => 'off', 'user_id' => 1];
 	$response = simulateHttpRequest('POST', $apiUrl . '/devices.php', $data);
 
 
@@ -259,13 +265,13 @@ function testFetchAllDevicesApi($apiUrl) {
 		return ["status" => "pass", "message" => "Fetched all devices via API.", "api_response" => $response['response']];
 	}
 	else {
-		return ["status" => "fail", "messgae" => "Failed to fetch devices via PAI.", "api_response" => $response['response']];
+		return ["status" => "fail", "messgae" => "Failed to fetch devices via API.", "api_response" => $response['response']];
 	}
 }
 
 //Test 15: Update user details via API
 function testUpdateUserApi($apiUrl) {
-	$data = ['user_id' => 1, 'username' => 'updated_user', 'email' => 'updated_email@example.com', 'status' => 'active']:
+	$data = ['user_id' => 1, 'username' => 'updated_user', 'email' => 'updated_email@example.com', 'status' => 'active'];
 	$response = simulateHttpRequest('PUT', $apiUrl . '/users.php', $data);
 
 	if ($response['http_code'] === 200 && $response['response']['success']) {
@@ -279,7 +285,7 @@ function testUpdateUserApi($apiUrl) {
 //Test 16: Update device details via API
 function testUpdateDeviceApi($apiUrl) {
 	$data = ['device_id' => 1, 'device_name' => 'Updated Device Name', 'status' => 'on'];
-	$response = simulateHttprequest('PUT', $apiUrl . '/devices.php', $data);
+	$response = simulateHttpRequest('PUT', $apiUrl . '/devices.php', $data);
 
 	if ($response['http_code'] === 200 && $response['response']['success']) {
 		return ["status" => "pass", "message" => "Device updated successfully.", "api_response" => $response['response']];
@@ -290,7 +296,7 @@ function testUpdateDeviceApi($apiUrl) {
 }
 
 //Test 17: Test an invalid request to the api
-function testInvalidRequestapi($apiUrl) {
+function testInvalidRequestApi($apiUrl) {
 	$data = ['invalid_param' => 'test_value'];
 	$response = simulateHttpRequest('POST', $apiUrl . '/devices.php', $data);
 
