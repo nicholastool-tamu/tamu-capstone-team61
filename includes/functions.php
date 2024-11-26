@@ -19,7 +19,7 @@ function jsonResponse($success, $message, $data = []) {
 		'success' => $success,
 		'message' => $message,
 		'data' => $data
-	]) . "<br>"; //Adds line break
+	]); //Adds line break
 }
 
 function getRecord($conn, $table, $conditions = []) {
@@ -41,7 +41,7 @@ function getRecord($conn, $table, $conditions = []) {
 	$stmt = $conn->prepare($query);
 
 	if (!empty($params)) {
-		$stmt->bind__param($types, ...$params);
+		$stmt->bind_param($types, ...$params);
 	}
 
 	$stmt->execute();
@@ -102,10 +102,13 @@ function updateRecord($conn, $table, $fields, $conditions, $types, ...$params) {
 	$stmt->close();
 }
 
-function updateEntity($conn, $table, $fields, $values, $id_field, $id_value) {
+function updateEntity($conn, $table, $fields, $values, $types, $id_field, $id_value) {
 	if (empty($fields) || empty($values) || empty($id_value)) {
 		jsonResponse(false, "Fields, values and ID value are required.");
 	}
+	//Converts to arrays
+	$fields = is_array($fields) ? $fields : [$fields];
+	$values = is_array($values) ? $values : [$values];
 
 	if (count($fields) !== count($values)) {
 		jsonresponse(false, "Number of fields and values must match.");
@@ -115,18 +118,13 @@ function updateEntity($conn, $table, $fields, $values, $id_field, $id_value) {
 	$query = "UPDATE $table SET $fieldSet WHERE $id_field = ?";
 	$stmt = $conn->prepare($query);
 
-	if (!stmt) {
+	if (!$stmt) {
 		jsonResponse(false, "Failed to prepare statement: " . $conn->error);
 	}
 
-	//Dynamically determine parameter types
-	$types = "";
-	foreach ($values as $value) {
-		$types .= is_int($value) ? "i" : "s";
-	}
-	$types .= is_int($id_value) ? "i" : "s";
-	$params = array_merge($values, [$id_value]);
-	$stmt->bind_param($types, ...$params);
+	$allValues = array_merge($values, [$id_value]);
+	$allTypes = $types . 'i';
+	$stmt->bind_param($allTypes, ...$allValues);
 
 	if($stmt->execute()) {
 		jsonResponse(true, ucfirst($table) . "updated successfully.");

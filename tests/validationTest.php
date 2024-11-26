@@ -68,18 +68,16 @@ function simulateHttpRequest($method, $url, $data = []) {
 	curl_setopt($curlHandle, CURLOPT_URL, $url);
 	curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, true); //Return Response as a string
 	curl_setopt($curlHandle, CURLOPT_HEADER, false); //Exclude headers in output
-	curl_setopt($curlHandle, CURLOPT_TIMEOUT, 10); //10 second timeout
+	curl_setopt($curlHandle, CURLOPT_TIMEOUT, 30); //30 second timeout
+	curl_setopt($curlHandle, CURLOPT_FOLLOWLOCATION, true);
+	curl_setopt($curlHandle, CURLOPT_SSL_VERIFYPEER, false);
 
 	//Execute request and get response, then close cURL handle
 	$response = curl_exec($curlHandle);
 	$httpCode = curl_getinfo($curlHandle, CURLINFO_HTTP_CODE); //Gets the HTTP status code
 	curl_close($curlHandle);
 
-	//Return HTTP status code and decoded JSON Response
-	return [
-		"http_code" => $httpCode, 
-		"response" => json_decode($response, true)
-	];
+	return ["http_code" => $httpCode, "response" => json_decode($response, true)];
 }
 
 //Beginning of main execution
@@ -127,7 +125,7 @@ function testCheckUsersTable($conn) {
 function testCheckDevicesTable($conn) {
 	$query = "SHOW TABLES LIKE 'devices'";
 	$result = $conn->query($query);
-	
+
 	if (!$conn) {
 		echo "No connection";
 	}
@@ -256,13 +254,10 @@ function testDeleteUserAndVerifyDevices($conn) {
 
 //Test 10: Create User using API
 function testCreateUserApi($apiUrl) {
-	$data = ['username' => 'api_user', 'email' => 'api_user@example.com', 'password' => 'securepassword'];
+	$data = ['username' => 'api_user', 'email' => 'api_user@example.com', 'password' => 'securepassword', 'status' => 'active'];
 	$response = simulateHttpRequest('POST', $apiUrl . '/users.php', $data);
 
-	if (!isset($response['response']) || !is_array($response['response'])) {
-		return ["status" => "fail", "message" => "invalid or empty API response", "api_response" => $response];
-	}
-	
+
 	if ($response['http_code'] === 200 &&isset($response['response']['success']) && $response['response']['success']) {
 		return ["status" => "pass", "message" => "User created successfully via API.", "api_response" => $response['response']];
 	}
@@ -321,26 +316,31 @@ function testCreateDeviceApi($apiUrl) {
 function testFetchAllDevicesApi($apiUrl) {
 	$response = simulateHttpRequest('GET', $apiUrl . '/devices.php');
 
-	if (!isset($response['response'] || !is_array($response['response'])) {
+	if (!isset($response['response']) || !is_array($response['response'])) {
 		return ["status" => "fail", "message" => "Invalid or empty API response", "api_response" => $response];
 	}
 
-	if ($response['http_code'] === 200 && isset($resposne['response']['success'] && $response['response']['success']) {
+	if ($response['http_code'] === 200 && isset($response['response']['success']) && $response['response']['success']) {
 		return ["status" => "pass", "message" => "Fetched all devices via API.", "api_response" => $response['response']];
 	}
 	else {
-		return ["status" => "fail", "messgae" => "Failed to fetch devices via API.", "api_response" => $response['response']];
+		return ["status" => "fail", "message" => "Failed to fetch devices via API.", "api_response" => $response['response']];
 	}
 }
 
 //Test 15: Update user details via API
 function testUpdateUserApi($apiUrl) {
-	$data = ['user_id' => 1, 'username' => 'updated_user', 'email' => 'updated_email@example.com', 'status' => 'active'];
+	$data = [
+		'user_id' => 1,
+		'fields' => ['username', 'email', 'status'],
+		'values' => ['updated_user', 'updated_email@example.com', 'active'],
+		'types' => 'sss'
+	];
 	$response = simulateHttpRequest('PUT', $apiUrl . '/users.php', $data);
 
-	if (!isset($response['response']) || !is_array($response['response'])) {
-		return ["status" => "fail", "message" => "Invalid or empty API response", "api_response" => $response];
-	}
+	//if (!isset($response['response']) || !is_array($response['response'])) {
+	//	return ["status" => "fail", "message" => "Invalid or empty API response", "api_response" => $response];
+	//}
 
 	if ($response['http_code'] === 200 && isset($response['response']['success']) && $response['response']['success']) {
 		return ["status" => "pass", "message" => "User data updated successfully.", "api_response" => $response['response']];
@@ -352,12 +352,14 @@ function testUpdateUserApi($apiUrl) {
 
 //Test 16: Update device details via API
 function testUpdateDeviceApi($apiUrl) {
-	$data = ['device_id' => 1, 'device_name' => 'Updated Device Name', 'status' => 'on'];
+	$data = [
+		'device_id' => 2,
+		'fields' => ['device_name', 'status'],
+		'values' => ['Updated Device Name', 'on'],
+		'types' => 'ss'
+	];
 	$response = simulateHttpRequest('PUT', $apiUrl . '/devices.php', $data);
 
-	if (!isset($response['response']) || !is_array($response['response'])) {
-		return ["status" => "fail", "message" => "Invalid or empty API response", "api_response" => $response];
-	}
 
 	if ($response['http_code'] === 200 && isset($response['response']['success']) && $response['response']['success']) {
 		return ["status" => "pass", "message" => "Device updated successfully.", "api_response" => $response['response']];

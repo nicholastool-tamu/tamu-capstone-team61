@@ -1,8 +1,8 @@
 <?php
 header('Content-Type: application/json');
 
-include_once '../includes/databaseConnection.php';
-include_once '../includes/functions.php';
+require_once '../includes/databaseConnection.php';
+require_once '../includes/functions.php';
 
 switch ($_SERVER['REQUEST_METHOD']) {
 	case 'GET':
@@ -15,27 +15,16 @@ switch ($_SERVER['REQUEST_METHOD']) {
 		break;
 
 	case 'POST':
-		if (isset($_POST['action']) && $_POST['action'] === 'update') {
-			//Update user status
-			if (isset($_POST['user_id'], $_POST['status'])) {
-				updateRecord($conn, 'users', ['status'], ['user_id'], 'si', $_POST['status'], $_POST['user_id']);
-			}
-			else {
-				jsonResponse(false, "User ID and status required for updating.");
-			}
+		if (isset($_POST['username'],  $_POST['email'], $_POST['password'])) {
+			//Hash password, set default status
+			$hashed_password = password_hash($_POST['password'], PASSWORD_BCRYPT);
+			$status = isset($_POST['status']) ? $_POST['status'] : 'active';
+
+			//Create new user
+			createRecord($conn, 'users', ['username', 'email', 'password', 'status'], 'ssss', $_POST['username'], $_POST['email'], $hashed_password, $status);
 		}
 		else {
-			//Create a new user
-			if (isset($_POST['username'], $_POST['email'],$_POST['password'], $_POST['status'])) {
-				//Hash password before storing it
-				$hashed_password = password_hash($_POST['password'], PASSWORD_BCRYPT);
-
-				//Create new user
-				createRecord($conn, 'users', ['username', 'email', 'password', 'status'], 'ssss', $_POST['username'], $_POST['email'], $hashed_password, $_POST['status']);
-			}
-			else {
-				jsonResponse(false, "Username, email, password, and status are required for creation");
-			}
+			jsonResponse(false, "Username, email, password, and status are required for creation");
 		}
 		break;
 	case 'PUT':
@@ -47,7 +36,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 		else {
 			jsonResponse(false, "User ID, fields, values, and types required for updating.");
 		}
-	break;
+		break;
 
 	case 'DELETE':
 		parse_str(file_get_contents("php://input"), $input);

@@ -1,7 +1,7 @@
 <?php
 //Include files for connection and basic functions
-include_once '../includes/databaseConnection.php';
-include_once '../includes/functions.php';
+require_once '../includes/databaseConnection.php';
+require_once '../includes/functions.php';
 
 //Content type for UI client
 header('Content-Type: application/json');
@@ -42,7 +42,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 		//Handle PUT requests for updating devices
 		parse_str(file_get_contents("php://input"), $input);
 		if (isset($input['device_id']) && isset($input['fields']) && isset($input['values']) && isset($input['types'])) {
-			updateDevice($conn, 'devices', $input['fields'], $input['values'], $input['types'], $input['device_id']);
+			updateEntity($conn, 'devices', $input['fields'], $input['values'], $input['types'],'device_id',  $input['device_id']);
 		}
 		else {
 			jsonResponse(false, "Device ID, fields, values, and types are required for updating.");
