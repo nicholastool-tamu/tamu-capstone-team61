@@ -1,20 +1,16 @@
 <?php
 
-// Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     try {
         require_once 'add_user.php';
         
-        // Validate password requirements
         if (strlen($_POST['password']) < 8) {
             $error_message = "Password must be at least 8 characters long";
         } elseif ($_POST['password'] !== $_POST['confirm_password']) {
             $error_message = "Passwords do not match";
         } else {
-            // Attempt to add the user to the database
             $result = addUser($_POST['username'], $_POST['password']);
             
-            // If successful, redirect to login page
             if ($result['success']) {
                 $_SESSION['signup_success'] = true;
                 header("Location: login_page.php");
@@ -24,7 +20,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
     } catch (Exception $e) {
-        // Display generic error message
         $error_message = "An error occurred during sign up. Please try again.";
     }
 }

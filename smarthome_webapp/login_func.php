@@ -1,5 +1,4 @@
 <?php
-// Start a new or resume existing session
 session_start();
 
 // Function to attempt user login with username and password

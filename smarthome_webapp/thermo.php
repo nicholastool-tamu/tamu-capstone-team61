@@ -9,9 +9,6 @@
     include 'common_styles.php';
     ?>
     <style>
-        /* Thermostat dial styling
-         * Creates a circular interface with dark theme
-         */
         .thermostat {
             width: 300px;
             height: 300px;
@@ -22,7 +19,6 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.2);
         }
 
-        /* Inner dial that users can interact with */
         .dial {
             width: 280px;
             height: 280px;
@@ -34,7 +30,6 @@
             cursor: pointer;
         }
 
-        /* Center display area showing temperature */
         .dial-center {
             width: 200px;
             height: 200px;
@@ -50,13 +45,9 @@
             color: white;
         }
 
-        /* Temperature display styling */
         .current-temp { font-size: 48px; font-weight: bold; margin-bottom: 5px; }
         .set-temp { font-size: 24px; color: #3498db; }
 
-        /* Visual indicator for temperature setting
-         * Uses conic gradient for circular progress
-         */
         .dial-highlight {
             position: absolute;
             width: 100%;
@@ -72,14 +63,12 @@
             opacity: 0.3;
         }
 
-        /* Manual temperature control section */
         .manual-control {
             margin: 20px auto;
             text-align: center;
             max-width: 300px;
         }
 
-        /* Input field and button styling */
         .temp-input {
             padding: 8px;
             width: 100px;
@@ -103,7 +92,6 @@
 <body>
     <?php include 'common_header.php'; ?>
 
-    <!-- Main thermostat interface -->
     <div class="thermostat">
         <div class="dial" id="dial">
             <div class="dial-highlight" id="dialHighlight"></div>
@@ -114,7 +102,6 @@
         </div>
     </div>
 
-    <!-- Manual temperature input section -->
     <div class="manual-control">
         <input type="number" 
                id="manualTemp" 
@@ -127,19 +114,19 @@
     </div>
 
     <script>
-        // DOM element references
+
         const dial = document.getElementById('dial');
         const dialHighlight = document.getElementById('dialHighlight');
         const currentTempDisplay = document.getElementById('currentTemp');
         const setTempDisplay = document.getElementById('setTemp');
         
-        // State variables
+
         let currentTemp = 72;
         let setTemp = 72;
         let isDragging = false;
         let startAngle = 0;
 
-        // Utility functions for temperature conversion
+  
         function tempToPercentage(temp) {
             return ((temp - 60) / (80 - 60)) * 100;
         }
@@ -148,14 +135,12 @@
             return Math.round(60 + (percentage / 100) * (80 - 60));
         }
 
-        // Update the visual display of temperatures
         function updateDisplay() {
             dialHighlight.style.setProperty('--percentage', `${tempToPercentage(setTemp)}%`);
             currentTempDisplay.textContent = `${currentTemp}°`;
             setTempDisplay.textContent = `Set: ${setTemp}°`;
         }
 
-        // Event listeners for dial rotation
         dial.addEventListener('mousedown', (e) => {
             isDragging = true;
             const rect = dial.getBoundingClientRect();
@@ -164,7 +149,6 @@
             startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
         });
 
-        // Handle temperature adjustment via dial rotation
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
 
@@ -186,7 +170,6 @@
             isDragging = false;
         });
 
-        // Manual temperature control handlers
         const manualTempInput = document.getElementById('manualTemp');
         const setManualTempButton = document.getElementById('setManualTemp');
 
@@ -201,7 +184,6 @@
             }
         });
 
-        // Additional input handlers for better UX
         manualTempInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 setManualTempButton.click();
@@ -212,7 +194,6 @@
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
         });
 
-        // Initialize the display
         updateDisplay();
     </script>
 </body>
