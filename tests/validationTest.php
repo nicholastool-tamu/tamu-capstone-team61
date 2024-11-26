@@ -254,11 +254,12 @@ function testDeleteUserAndVerifyDevices($conn) {
 
 //Test 10: Create User using API
 function testCreateUserApi($apiUrl) {
-	$data = ['username' => 'api_user', 'email' => 'api_user@example.com', 'password' => 'securepassword', 'status' => 'active'];
+	$timestamp = time();
+	$data = ['username' => 'api_user'. $timestamp, 'email' => 'api_user@example.com'. $timestamp, 'password' => 'securepassword', 'status' => 'active'];
 	$response = simulateHttpRequest('POST', $apiUrl . '/users.php', $data);
 
 
-	if ($response['http_code'] === 200 &&isset($response['response']['success']) && $response['response']['success']) {
+	if ($response['http_code'] === 200 && isset($response['response']['success']) && $response['response']['success']) {
 		return ["status" => "pass", "message" => "User created successfully via API.", "api_response" => $response['response']];
 	}
 	else {
