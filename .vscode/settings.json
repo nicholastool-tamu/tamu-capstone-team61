@@ -15,5 +15,5 @@
     "idf.toolsPathWin": "c:\\Espressif\\tools",
     "idf.flashType": "UART",
     "idf.portWin": "COM3",
-    "git.enabled": false
+    "git.enabled": true
 }
