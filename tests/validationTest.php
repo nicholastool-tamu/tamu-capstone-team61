@@ -42,7 +42,7 @@ function addtestCase(&$response, $title, $results) {
 		echo "[$timestamp] Test Error: {$e->getMessage()}\n";
 		echo "------------------------\n";
 	}
-	sleep(3); //Sleep for 3 seconds in between tests
+	sleep(1); //Sleep for 1 second in between tests
 }
 //Function to simulate HTTP Requests
 function simulateHttpRequest($method, $url, $data = []) {
@@ -51,18 +51,21 @@ function simulateHttpRequest($method, $url, $data = []) {
 	//Configure HTTP method and data
 	if ($method === 'POST') {
 		curl_setopt($curlHandle, CURLOPT_POST, true);
-		curl_setopt($curlHandle, CURLOPT_POSTFIELDS, http_build_query($data));
+		curl_setopt($curlHandle, CURLOPT_POSTFIELDS, json_encode($data));
+		curl_setopt($curlHandle, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 	}
 	elseif ($method === 'GET' && !empty($data)) {
 		$url .= '?' . http_build_query($data);
 	}
 	elseif ($method === 'PUT') {
 		curl_setopt($curlHandle, CURLOPT_CUSTOMREQUEST, 'PUT');
-		curl_setopt($curlHandle, CURLOPT_POSTFIELDS, http_build_query($data));
+		curl_setopt($curlHandle, CURLOPT_POSTFIELDS, json_encode($data));
+		curl_setopt($curlHandle, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 	}
 	elseif ($method === 'DELETE') {
 		curl_setopt($curlHandle, CURLOPT_CUSTOMREQUEST, 'DELETE');
-		curl_setopt($curlHandle, CURLOPT_POSTFIELDS, http_build_query($data));
+		curl_setopt($curlHandle, CURLOPT_POSTFIELDS, json_encode($data));
+		curl_setopt($curlHandle, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 	}
 	//Set URL and options
 	curl_setopt($curlHandle, CURLOPT_URL, $url);
@@ -82,7 +85,8 @@ function simulateHttpRequest($method, $url, $data = []) {
 
 //Beginning of main execution
 $response = [];
-$apiUrl = "http://192.168.1.23/api";
+$env = parse_ini_file('/var/www/html/.env');
+$apiUrl = $env['API_URL'];
 
 //Database Tests
 addtestCase($response, "Test 1: Check 'users' table exists", [testCheckUsersTable($conn)]);
@@ -374,6 +378,10 @@ function testUpdateDeviceApi($apiUrl) {
 function testInvalidRequestApi($apiUrl) {
 	$data = ['invalid_param' => 'test_value'];
 	$response = simulateHttpRequest('POST', $apiUrl . '/devices.php', $data);
+
+	if (empty($response) || !isset($response['http_code'], $response['response']['success'])) {
+		return ["status" => "fail", "message" => "Invalid or malformed API response.", "api_response" => $response];
+	}
 
 	if ($response['http_code'] === 400 || !$response['response']['success']) {
 		return["status" => "pass", "message" => "API correctly handled invalid request.", "api_response" => $response['response']];
