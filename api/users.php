@@ -1,5 +1,14 @@
 <?php
 header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+	http_response_code(200);
+	exit();
+}
+
 
 require_once '../includes/databaseConnection.php';
 require_once '../includes/functions.php';
@@ -29,9 +38,10 @@ switch ($_SERVER['REQUEST_METHOD']) {
 		break;
 	case 'PUT':
 	//Handle PUT requests to update user data
-		parse_str(file_get_contents("php://input"), $input);
-		if (isset($input['user_id']) && isset($input['fields']) && isset($input['values']) && isset($input['types'])) {
-			updateEntity($conn, 'users', $input['fields'], $input['values'], $input['types'], 'user_id', $input['user_id']);
+		parse_str(file_get_contents('php://input'), $putData);
+
+		if (isset($putData['user_id']) && isset($putData['fields']) && isset($putData['values']) && isset($putData['types'])) {
+			updateEntity($conn, 'users', $putData['fields'], $putData['values'], $putData['types'], 'user_id', $putData['user_id']);
 		}
 		else {
 			jsonResponse(false, "User ID, fields, values, and types required for updating.");

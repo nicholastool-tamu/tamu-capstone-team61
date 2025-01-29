@@ -6,7 +6,7 @@ function cleanInput($data) {
 }
 function jsonResponse($success, $message, $data = []) {
 	//Log json responses to a file
-	file_put_contents('responses.log', json_encode([
+	file_put_contents('/tmp/responses.log', json_encode([
 		'success' => $success,
 		'message' => $message,
 		'data' => $data,
