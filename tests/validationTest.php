@@ -47,7 +47,11 @@ function addtestCase(&$response, $title, $results) {
 //Function to simulate HTTP Requests
 function simulateHttpRequest($method, $url, $data = []) {
 	$curlHandle = curl_init();
-
+	//Set Content-Type header
+	$headers = [
+		'Content-Type: application/x-www-form-urlencoded',
+		'Accept: application/json'
+	];
 	//Configure HTTP method and data
 	if ($method === 'POST') {
 		curl_setopt($curlHandle, CURLOPT_POST, true);
@@ -87,7 +91,6 @@ function simulateHttpRequest($method, $url, $data = []) {
 $response = [];
 $env = parse_ini_file('/var/www/html/.env');
 $apiUrl = $env['API_URL'];
-
 //Database Tests
 addtestCase($response, "Test 1: Check 'users' table exists", [testCheckUsersTable($conn)]);
 addtestCase($response, "Test 2: Check 'devices' table exists", [testCheckDevicesTable($conn)]);

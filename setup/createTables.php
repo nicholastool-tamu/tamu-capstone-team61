@@ -39,8 +39,7 @@ function createUsersTable($conn) {
 		jsonResponse(true, "Users table created successfully.");
 	}
 	else {
-		jsonResponse(false,"Error creating Users table: " . $conn->error);
-	}
+		jsonResponse(false,"Error creating Users table: " . $conn->error);}
 
 }
 //Create Devices Table

@@ -2,10 +2,22 @@
 //Include files for connection and basic functions
 require_once '../includes/databaseConnection.php';
 require_once '../includes/functions.php';
-
 //Content type for UI client
 header('Content-Type: application/json');
 
+//Decode JSON inputs if received
+if (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
+	$rawData = file_get_contents('php://input');
+	$jsonData = json_decode($rawData, true);
+	if (is_array($jsonData)) {
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			$_POST = array_merge($_POST, $jsonData);
+		} else {
+			$input = $jsonData;
+		}
+	}
+}
+//Main Switch Case to handle request method
 switch ($_SERVER['REQUEST_METHOD']) {
 	case 'GET':
 		//Check if a specific device is being requested, otherwise give data for all devices
@@ -40,8 +52,10 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
 	case 'PUT':
 		//Handle PUT requests for updating devices
-		parse_str(file_get_contents("php://input"), $input);
-		if (isset($input['device_id']) && isset($input['fields']) && isset($input['values']) && isset($input['types'])) {
+		if (!isset($input)) {
+			parse_str(file_get_contents("php://input"), $input);
+		}
+		if (isset($input['device_id'], $input['fields'], $input['values'], $input['types'])) {
 			updateEntity($conn, 'devices', $input['fields'], $input['values'], $input['types'],'device_id',  $input['device_id']);
 		}
 		else {

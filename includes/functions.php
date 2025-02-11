@@ -6,7 +6,8 @@ function cleanInput($data) {
 }
 function jsonResponse($success, $message, $data = []) {
 	//Log json responses to a file
-	file_put_contents('responses.log', json_encode([
+	$logFile = __DIR__ . '/responses.log';
+	file_put_contents($logFile, json_encode([
 		'success' => $success,
 		'message' => $message,
 		'data' => $data,
@@ -19,7 +20,7 @@ function jsonResponse($success, $message, $data = []) {
 		'success' => $success,
 		'message' => $message,
 		'data' => $data
-	]); //Adds line break
+	]); 
 }
 
 function getRecord($conn, $table, $conditions = []) {
