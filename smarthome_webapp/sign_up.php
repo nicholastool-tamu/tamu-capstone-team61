@@ -8,8 +8,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $error_message = "Password must be at least 8 characters long";
         } elseif ($_POST['password'] !== $_POST['confirm_password']) {
             $error_message = "Passwords do not match";
+        } elseif (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+            $error_message = "Please enter a valid email address";
         } else {
-            $result = addUser($_POST['username'], $_POST['password']);
+            $result = addUser($_POST['username'], $_POST['password'], $_POST['email']);
             
             if ($result['success']) {
                 $_SESSION['signup_success'] = true;
@@ -68,7 +70,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         input[type="text"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="email"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -119,6 +122,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
             </div>
             
             <div class="form-group">
