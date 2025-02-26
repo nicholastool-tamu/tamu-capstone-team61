@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+	session_start();
+}
 
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: login.php");
@@ -49,15 +51,15 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 
 
     <div class="dashboard">
-        <button class="dashboard-btn" onclick="window.location.href='lights.php'">
+        <button class="dashboard-btn" onclick="window.location.href='lights.php?username=<?php echo $_SESSION['username']; ?>'">
             Light
         </button>
        
-        <button class="dashboard-btn" onclick="window.location.href='sound.php'">
+        <button class="dashboard-btn" onclick="window.location.href='sound.php?username=<?php echo $_SESSION['username']; ?>'">
             Speaker
         </button>
         
-        <button class="dashboard-btn" onclick="window.location.href='thermo.php'">
+        <button class="dashboard-btn" onclick="window.location.href='thermo.php?username=<?php echo $_SESSION['username']; ?>'">
             Thermostat
         </button>
     </div>

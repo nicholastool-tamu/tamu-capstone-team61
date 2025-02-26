@@ -1,3 +1,28 @@
+<?php
+session_start();
+
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+	header("location: login.php");
+	exit();
+}
+
+$username = $_GET['username'] ?? null;
+
+require_once '/var/www/backend/includes/databaseConnection.php';
+
+$user_id = null;
+if ($username) {
+	$stmt = $conn->prepare("SELECT user_id FROM users WHERE username = ?");
+	$stmt->bind_param("s", $username);
+	$stmt->execute();
+	$result = $stmt->get_result();
+	if ($result->num_rows === 1) {
+		$user = $result->fetch_assoc();
+		$user_id = $user['user_id'];
+	}
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,28 +136,45 @@
         </div>
     </div>
 
-    <script>
-        const volumeSlider = document.getElementById('volumeSlider');
-        const volumeValue = document.getElementById('volumeValue');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        let isPlaying = false;
+	<script src="apiFunctions.js"></script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const userId = '';
+			apiRequest('/api/devices.php?device_type=speaker&userId=${userId}', 'GET', {}, function(result, error) {
+				const deviceList = document.getElementById('deviceList');
+				deviceList.innerHTML = 'No devices found!';
+				if (error) {
+					showNotification("Error fetching devices: " + error, false);
+					return;
+				}
+				if (result.success && result.data && result.data.length > 0) {
+					result.data.forEach(device => {
+						const deviceItem = document.createElement('div');
+						deviceItem.className = 'device-item';
+						deviceItem.innerHTML = `
+							<div>${device.device_name} - Volume: <span id="volume-${device.device_id}">${device.volume}</span>%</div>
+							<input type="range" min="0" max="100" value="${device.volume}" onchange="setVolume('${device.device_id}', this.value)">
+						`;
+						deviceList.appendChild(deviceItem);
+					});
+				} else {
+					deviceList.innerHTML = '<p>No speakers found.</p>';
+				}
+			});
+		});
 
-        volumeSlider.addEventListener('input', function() {
-            const value = this.value;
-            volumeValue.textContent = `Volume: ${value}%`;
-        });
+		function setVolume(deviceId, volume) {
+			const payload = {action: "update", device_id: deviceId, volume: volume};
+			apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
+				if (error || !result.success) {
+					showNotification("Error updating volume: " + (error || result.message), false);
+				} else {
+					document.getElementById(`volume-${deviceId}`).textContent = volume;
+					showNotification("Volume updated to: " + volume, true);
+				}
+			});
+		}
+	</script>
 
-
-        function togglePlayPause() {
-            isPlaying = !isPlaying;
-            if (isPlaying) {
-                playPauseBtn.innerHTML = '⏸';
-                playPauseBtn.classList.add('playing');
-            } else {
-                playPauseBtn.innerHTML = '▶';
-                playPauseBtn.classList.remove('playing');
-            }
-        }
-    </script>
 </body>
 </html>

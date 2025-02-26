@@ -1,18 +1,6 @@
 <?php
 session_start();
 
-require_once 'login_func.php';
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $result = attemptLogin($_POST['username'], $_POST['password']);
-    
-    if ($result['success']) {
-        header("Location: home_dash.php");
-        exit();
-    } else {
-        $error_message = "Invalid username or password";
-    }
-}
 
 if (isset($_SESSION['signup_success'])) {
     $success_message = "Account created successfully! Please login.";
@@ -118,15 +106,15 @@ if (isset($_SESSION['signup_success'])) {
             </div>
         <?php endif; ?>
         
-        <form action="login_page.php" method="POST">
+        <form id="loginForm">
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
+                <input type="text" id="username" name="username" placeholder="Username" required>
             </div>
             
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" placeholder="Password" required>
             </div>
 
             <button type="submit" class="login-btn">Login</button>
@@ -134,6 +122,36 @@ if (isset($_SESSION['signup_success'])) {
         
         <a href="start.php" class="back-btn">Back to Start</a>
     </div>
+
+	<script src="apiFunctions.js"> </script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const loginForm = document.getElementById('loginForm');
+			if (loginForm) {
+				loginForm.addEventListener('submit', function(e) {
+					e.preventDefault();
+
+					const payload = {
+						username: document.getElementById('username').value.trim(),
+						password: document.getElementById('password').value
+					};
+
+					apiRequest('/api/login.php', 'POST', payload, function(result, error) {
+						if (error) {
+							showNotification("Error: " + error, false);
+						} else {
+							showNotification(result.message, result.success);
+							if (result.success) {
+								setTimeout(() => {window.location.href = 'home_dash.php';}, 1200);
+							}
+						}
+					});
+				});
+			} else {
+				console.error('Element with id "loginForm" not found.');
+			}
+		});
+	</script>
 </body>
 </html>
 

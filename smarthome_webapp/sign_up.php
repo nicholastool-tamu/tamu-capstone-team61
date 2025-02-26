@@ -1,32 +1,3 @@
-<?php
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    try {
-        require_once 'add_user.php';
-        
-        if (strlen($_POST['password']) < 8) {
-            $error_message = "Password must be at least 8 characters long";
-        } elseif ($_POST['password'] !== $_POST['confirm_password']) {
-            $error_message = "Passwords do not match";
-        } elseif (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-            $error_message = "Please enter a valid email address";
-        } else {
-            $result = addUser($_POST['username'], $_POST['password'], $_POST['email']);
-            
-            if ($result['success']) {
-                $_SESSION['signup_success'] = true;
-                header("Location: login_page.php");
-                exit();
-            } else {
-                $error_message = $result['message'];
-            }
-        }
-    } catch (Exception $e) {
-        $error_message = "An error occurred during sign up. Please try again.";
-    }
-}
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -118,7 +89,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         <?php endif; ?>
         
-        <form action="sign_up.php" method="POST">
+        <form id="signupForm">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required>
@@ -144,5 +115,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         <a href="start.php" class="back-btn">Back to Start</a>
     </div>
+	<script src="apiFunctions.js"></script>
+	<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		const signupForm = document.getElementById('signupForm');
+		if (signupForm) {
+			signupForm.addEventListener('submit', function(e) {
+				e.preventDefault();
+
+				//Retrieve inputs
+				const username = document.getElementById('username').value.trim();
+				const email = document.getElementById('email').value.trim();
+				const password = document.getElementById('password').value;
+				const confirmPassword = document.getElementById('confirm_password').value;
+
+				//Password validations
+				if (password !== confirmPassword) {
+					showNotification("Passwords do not match", false);
+					return;
+				}
+				if (password.length < 8) {
+					showNotitication("Password must be at least 8 characters", false);
+					return;
+				}
+
+				const payload = {
+					username: username, email: email, password: password, confirm_password: confirmPassword, status: "active"
+				};
+
+				apiRequest('/api/users.php', 'POST', payload, function(result, error) {
+					if (error) {
+						showNotification("Error: " + error, false);
+					} else {
+						showNotification(result.message, result.success);
+						if (result.success) {
+							setTimeout(() => {
+								window.location.href = 'login_page.php';
+							}, 1200);
+						}
+					}
+				});
+			});
+		} else {
+			console.error('Element with id "signupForm" not found.');
+		}
+	});
+	</script>
 </body>
 </html>

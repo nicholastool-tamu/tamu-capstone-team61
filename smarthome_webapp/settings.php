@@ -6,6 +6,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: login_page.php");
     exit();
 }
+$userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
 ?>
 
 <!DOCTYPE html>
@@ -201,15 +202,11 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </div>
         </div>
     </div>
-
+	<script src="apiFunctions.js"></script>
     <script>
         let currentDeviceType = '';
-        let devices = {
-            lights: [],
-            speaker: [],
-            thermostat: []
-        };
-
+	const userId = "<?php echo $userId; ?>";
+	console.log("user id from session:", userId);
         function toggleDeviceList(type) {
             const list = document.getElementById(`${type}-list`);
             list.style.display = list.style.display === 'block' ? 'none' : 'block';
@@ -228,35 +225,56 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         function addDevice() {
             const name = document.getElementById('newDeviceName').value.trim();
             if (name) {
-                devices[currentDeviceType].push(name);
-                updateDeviceList(currentDeviceType);
-                localStorage.setItem('devices', JSON.stringify(devices));
-                hideAddDeviceModal();
+            	const payload = {action: "add", device_type: currentDeviceType, device_name: name, user_id: userId, status: "inactive"};
+			apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
+			if (error || !result.success) {
+				showNotification("Error adding device: " + (error || result.message), false);
+			} else {
+				showNotification("Device added successfully", true)
+				fetchDevices(currentDeviceType);
+				hideAddDeviceModal();
+			}
+		});
             }
         }
 
-        function deleteDevice(type, index) {
-            devices[type].splice(index, 1);
-            updateDeviceList(type);
-            localStorage.setItem('devices', JSON.stringify(devices));
+        function deleteDevice(type, deviceId) {
+        	const payload = {action: "delete", device_id: deviceId};
+		apiRequest('/api/devices.php', 'DELETE', payload, function(result, error) {
+			if (error || !result.success) {
+				showNotification("Error deleting device: " + (error || result.message), false)
+			} else {
+				showNotification("Device deleted successfully", true);
+				fetchDevices(type);
+			}
+		});
         }
 
-        function updateDeviceList(type) {
-            const container = document.getElementById(`${type}-items`);
-            container.innerHTML = devices[type].map((device, index) => `
-                <div class="device-item">
-                    ${device}
-                    <button class="delete-btn" onclick="deleteDevice('${type}', ${index})">Delete</button>
-                </div>
-            `).join('');
+        function fetchDevices(type) {
+		apiRequest(`/api/devices.php?device_type=${type}&user_id=${userId}`, 'GET', null, function(result,error) {
+            		const container = document.getElementById(`${type}-items`);
+			if (error) {
+				container.innerHTML = `<p>Error loading ${type}.</p>`;
+				return;
+			}
+			if (result.success && result.data) {
+            			container.innerHTML = result.data.map(device => `
+                			<div class="device-item">
+                    			${device.device_name}
+                    			<button class="delete-btn" onclick="deleteDevice('${type}', ${device.device_id})">Delete</button>
+                			</div>
+            			`).join('');
+			} else {
+				container.innerHTML = `<p>No ${type} found.</p>`;
+			}
+		});
         }
 
-        // Load devices from localStorage on page load
-        const savedDevices = localStorage.getItem('devices');
-        if (savedDevices) {
-            devices = JSON.parse(savedDevices);
-            ['lights', 'speaker', 'thermostat'].forEach(type => updateDeviceList(type));
-        }
+	document.addEventListener('DOMContentLoaded', function() {
+		fetchDevices('lights');
+		fetchDevices('speaker');
+		fetchDevices('thermostat');
+	});
     </script>
 </body>
 </html>

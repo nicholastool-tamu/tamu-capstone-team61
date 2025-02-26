@@ -5,6 +5,22 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header("Location: login_page.php");
     exit();
 }
+
+$username = $_GET['username'] ?? null;
+
+require_once '/var/www/backend/includes/databaseConnection.php';
+
+$user_id = null;
+if ($username) {
+	$stmt = $conn->prepare("SELECT user_id FROM users WHERE username = ?");
+	$stmt->bind_param("s", $username);
+	$stmt->execute();
+	$result = $stmt->get_result();
+	if ($result->num_rows === 1) {
+		$user = $result->fetch_assoc();
+		$user_id = $user['user_id'];
+	}
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -105,77 +121,56 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         </div>
     </div>
 
-    <script>
-        let currentLight = null;
-        let isLightOn = false;
-        //Get elements 
-        const button = document.getElementById('toggleButton');
-        const status = document.getElementById('status');
-        const bulb = document.getElementById('bulb');
-        const lightList = document.getElementById('lightList');
+	<script src="apiFunctions.js"></script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const userId = '<?php echo $user_id; ?>';
+			apiRequest('/api/devices.php?device_type=light&user_id=${user_id}', 'GET', {}, function(result, error) {
+				const deviceList = document.getElementById('lightList');
+				deviceList.innerHTML = '<p>No devices found!</p>';
+				if (error) {
+					showNotification("Error fetching devices: " + error, false);
+					return;
+				}
+				if (result.success && result.data && result.data.length > 0) {
+					result.data.forEach(device => {
+						const deviceItem = document.createElement('div');
+						deviceItem.className = 'device-item';
+						deviceItem.innerHTML = `<div>${device.device_name} - Status: <span id="status-${device.device_id}">${device.status}</span></div>
+							<button onclick="toggleLight('${device.device_id}', '$device.status}')">Toggle Light</button>
+							<input type="range" min="0" max="100" value="${device.brightness}" onchange="setBrightness('${device.device_id}', this.value)">
+						`;
+						deviceList.appendChild(deviceItem);
+					});
+				} else {
+					deviceList.innerHtml = '<p>No lights found.</p>';
+				}
+			});
+		});
 
-        // Load and display lights from localStorage
-        function loadLights() {
-            const savedDevices = localStorage.getItem('devices');
-            if (savedDevices) {
-                const devices = JSON.parse(savedDevices);
-                const lights = devices.lights || [];
-                
-                if (lights.length === 0) {
-                    lightList.innerHTML = `
-                        <div class="no-lights-message">
-                            No lights found. Add lights in the settings page.
-                        </div>`;
-                    return;
-                }
+		function toggleLight(deviceId, currentStatus) {
+			const newStatus = currentStatus === 'on' ? 'off' : 'on';
+			const payload = {action: "update", device_id: deviceId, status: newStatus};
+			apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
+				if (error || !result.success) {
+					showNotification("Error updating light: " + (error || result.message), false);
+				} else {
+					document.getElementById('status-${deviceId}').textContent = newStatus;
+					showNotification("Light status updated to: " + newStatus, true);
+				}
+			});
+		}
 
-                lightList.innerHTML = lights.map(light => `
-                    <button class="light-select-btn" onclick="selectLight('${light}')">${light}</button>
-                `).join('');
-            }
-        }
-
-        function selectLight(lightName) {
-            currentLight = lightName;
-            document.querySelectorAll('.light-select-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent === lightName) {
-                    btn.classList.add('active');
-                }
-            });
-            
-            // Reset light state
-            isLightOn = false;
-            button.disabled = false;
-            button.textContent = 'Turn ON';
-            button.classList.remove('on');
-            button.classList.add('off');
-            status.textContent = `${lightName} is OFF`;
-            bulb.style.opacity = '0.3';
-        }
-
-        function toggleLight() {
-            if (!currentLight) return;
-            
-            isLightOn = !isLightOn;
-            
-            if (isLightOn) {
-                button.textContent = 'Turn OFF';
-                button.classList.remove('off');
-                button.classList.add('on');
-                status.textContent = `${currentLight} is ON`;
-                bulb.style.opacity = '1';
-            } else {
-                button.textContent = 'Turn ON';
-                button.classList.remove('on');
-                button.classList.add('off');
-                status.textContent = `${currentLight} is OFF`;
-                bulb.style.opacity = '0.3';
-            }
-        }
-
-        // Initialize the lights
-        loadLights();
-    </script>
+		function setBrightness(deviceId, brightness) {
+			const payload = {action: "update", device_id: deviceId, brightness: brightness};
+			apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
+				if (error || !result.success) {
+					showNotification("Error updating brightness: " + (error || result.message), false);
+				} else {
+					showNotification("Brightness updated to: " + brightness, true);
+				}
+			});
+		}
+	</script>
 </body>
 </html>
