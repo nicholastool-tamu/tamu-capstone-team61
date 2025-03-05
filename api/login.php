@@ -14,7 +14,7 @@ if (isset($data['username']) && isset($data['password'])) {
 	$password = $data['password'];
 
 	try {
-		$stmt = $conn->prepare("SELECT password FROM users WHERE username = ?");
+		$stmt = $conn->prepare("SELECT user_id, password FROM users WHERE username = ?");
 		if (!$stmt) {
 			throw new Exception("Prepare failed: " . $conn->error);
 		}
@@ -32,6 +32,7 @@ if (isset($data['username']) && isset($data['password'])) {
 			if (password_verify($password, $user['password'])) {
 				$_SESSION['logged_in'] = true;
 				$_SESSION['username'] = $username;
+				$_SESSION['user_id'] = $user['user_id'];
 				echo json_encode(['success' => true, 'message' => 'Login Successful']);
 				exit();
 			}
