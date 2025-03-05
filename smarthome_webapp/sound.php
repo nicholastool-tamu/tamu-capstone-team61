@@ -7,11 +7,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
 }
 
 $username = $_GET['username'] ?? null;
-
-require_once '/var/www/backend/includes/databaseConnection.php';
-
-$user_id = null;
-if ($username) {
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+if (!$user_id && $username) {
+	require_once '/var/www/backend/includes/databaseConnection.php';
 	$stmt = $conn->prepare("SELECT user_id FROM users WHERE username = ?");
 	$stmt->bind_param("s", $username);
 	$stmt->execute();
@@ -111,6 +109,15 @@ if ($username) {
             align-items: center;
             justify-content: center;
         }
+	.no-speaker-message {
+		position: absolute;
+		top: calc(20vh + 180px);
+		width: 100%;
+		text-align: center;
+		color: white;
+		font-size: 24px;
+		display: none;
+	}
     </style>
 </head>
 <body>
@@ -119,13 +126,14 @@ if ($username) {
     <div class="speaker-container">
         <div class="speaker-emoji">🔊</div>
         
-        <div class="volume-control">
+        <div class="volume-control" id="volumeControl">
             <div class="volume-value" id="volumeValue">Volume: 50%</div>
-            <input type="range" 
-                   class="volume-slider" 
-                   min="0" 
-                   max="100" 
-                   value="50" 
+            <input type="range"
+                   class="volume-slider"
+                   min="0"
+                   max="100"
+		   step="10"
+                   value="50"
                    id="volumeSlider">
         </div>
 
@@ -134,45 +142,70 @@ if ($username) {
                 ▶
             </button>
         </div>
+	<div class="no-speaker-message" id="noSpeakerMessage">
+		No speaker found. Please add a device in the settings page.
+	</div>
     </div>
 
 	<script src="apiFunctions.js"></script>
 	<script>
+		let speakerDeviceId = null;
 		document.addEventListener('DOMContentLoaded', function() {
-			const userId = '';
-			apiRequest('/api/devices.php?device_type=speaker&userId=${userId}', 'GET', {}, function(result, error) {
-				const deviceList = document.getElementById('deviceList');
-				deviceList.innerHTML = 'No devices found!';
-				if (error) {
-					showNotification("Error fetching devices: " + error, false);
+			const userId = '<?php echo $user_id; ?>';
+			apiRequest(`/api/devices.php?device_type=speaker&user_id=${userId}`, 'GET', {}, function(result, error) {
+				console.log("API result:", result);
+				if (error || !result.success || !result.data || result.data.length === 0) {
+					console.log(result);
+					document.getElementById('volumeControl').style.display = 'none';
+					document.getElementById('playPauseBtn').style.display ='none';
+					document.getElementById('noSpeakerMessage').style.display = 'block';
 					return;
 				}
-				if (result.success && result.data && result.data.length > 0) {
-					result.data.forEach(device => {
-						const deviceItem = document.createElement('div');
-						deviceItem.className = 'device-item';
-						deviceItem.innerHTML = `
-							<div>${device.device_name} - Volume: <span id="volume-${device.device_id}">${device.volume}</span>%</div>
-							<input type="range" min="0" max="100" value="${device.volume}" onchange="setVolume('${device.device_id}', this.value)">
-						`;
-						deviceList.appendChild(deviceItem);
-					});
-				} else {
-					deviceList.innerHTML = '<p>No speakers found.</p>';
+				const device = result.data[0];
+				speakerDeviceId = device.device_id;
+				let volume = 50;
+				if (device.volume !== undefined && device.volume !== null) {
+					volume = device.volume;
+				} else if (device.device_settings) {
+					try {
+						const settings = JSON.parse(device.device_settings);
+						if (settings.volume !== undefined) {
+							volume = settings.volume;
+						}
+					} catch (e) {
+						console.error("Error parsing device_settings:", e);
+					}
 				}
+				document.getElementById('volumeSlider').value = volume;
+				document.getElementById('volumeValue').textContent = "Volume: " + volume + "%";
 			});
 		});
 
-		function setVolume(deviceId, volume) {
-			const payload = {action: "update", device_id: deviceId, volume: volume};
+		document.getElementById('volumeSlider').addEventListener('change', function() {
+			const volume = parseInt(this.value);
+			setVolume(volume);
+		});
+
+		function setVolume(volume) {
+			if (!speakerDeviceId) return;
+			const payload = {action: "update", device_id: speakerDeviceId, volume: volume};
 			apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
 				if (error || !result.success) {
 					showNotification("Error updating volume: " + (error || result.message), false);
 				} else {
-					document.getElementById(`volume-${deviceId}`).textContent = volume;
+					document.getElementById('volumeValue').textContent = "Volume: " + volume + "%";
 					showNotification("Volume updated to: " + volume, true);
 				}
 			});
+		}
+
+		function togglePlayPause() {
+			const btn = document.getElementById('playPauseBtn');
+			if (btn.textContent.trim() === 'Play') {
+				btn.textContent = 'Pause';
+			} else {
+				btn.textContent = 'Play';
+			}
 		}
 	</script>
 

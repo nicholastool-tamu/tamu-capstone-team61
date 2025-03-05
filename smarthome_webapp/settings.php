@@ -252,6 +252,7 @@ $userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
 
         function fetchDevices(type) {
 		apiRequest(`/api/devices.php?device_type=${type}&user_id=${userId}`, 'GET', null, function(result,error) {
+			console.log("Fetch Devices result:", result);
             		const container = document.getElementById(`${type}-items`);
 			if (error) {
 				container.innerHTML = `<p>Error loading ${type}.</p>`;
@@ -271,6 +272,7 @@ $userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
         }
 
 	document.addEventListener('DOMContentLoaded', function() {
+		document.getElementById('lights-list').style.display = 'block';
 		fetchDevices('lights');
 		fetchDevices('speaker');
 		fetchDevices('thermostat');
