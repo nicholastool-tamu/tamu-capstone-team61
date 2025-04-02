@@ -15,5 +15,9 @@
     "idf.toolsPathWin": "c:\\Espressif\\tools",
     "idf.flashType": "UART",
     "idf.portWin": "COM3",
-    "git.enabled": true
+    "git.enabled": true,
+    "files.associations": {
+        "*.xdc": "verilog",
+        "mqtt_client.h": "c"
+    }
 }
