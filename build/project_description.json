@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "SmartHomeAuto2",
-    "project_version":    "1981b9f-dirty",
+    "project_version":    "b470735-dirty",
     "project_path":       "C:/Users/tyler/SmartHomeAuto2",
     "idf_path":           "C:/Espressif/frameworks/esp-idf-v5.3.1",
     "build_dir":          "C:/Users/tyler/SmartHomeAuto2/build",

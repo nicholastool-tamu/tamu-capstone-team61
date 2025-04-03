@@ -39,6 +39,9 @@ ESP32 - WiFi/MQTT, LEDC, Speaker Control, Temp/Humidity Sensor
 #include "esp_wifi_types.h"
 #include "server_cert.h"
 #include "mbedtls/ssl.h"
+#include "esp_crt_bundle.h"
+
+
 
 
 #define LED_PIN GPIO_NUM_22
@@ -63,11 +66,6 @@ ESP32 - WiFi/MQTT, LEDC, Speaker Control, Temp/Humidity Sensor
 //#define WIFI_PASS "78-ochre-5357"
 
 //#define HTTP_URL "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=17"
-
-
-//static const char *TAG = "ESP32";
-//static esp_mqtt_client_handle_t client;
-
 
 
 
@@ -232,309 +230,6 @@ void wifi_init_sta(void)
 }
 
 
-/*
-esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt)
-{
-    switch (evt->event_id)
-    {
-        case HTTP_EVENT_ON_DATA:
-            printf("Received response: %.*s\n", evt->data_len, (char *)evt->data);
-
-            char *data = strndup(evt->data, evt->data_len);
-
-            sscanf(data, "relay=%d&led=%ld&speaker=%ld&", &Relay_status, &duty, &duty_speaker);
-
-            gpio_set_level(GPIO_NUM_18, Relay_status);
-
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty); //set duty cycle
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0); //update duty cycle
-
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, duty_speaker); //set duty cycle
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1); //update duty cycle
-
-            free(data);
-            break;
-        
-        default:
-            break;
-
-    }
-    return ESP_OK;
-
-}
-*/
-/*
-void set_custom_dns()
-{
-    esp_netif_dns_info_t dns_info;
-    IP4_ADDR(&dns_info.ip.u_addr.ip4, 1, 1, 1, 1);
-    dns_info.ip.type = IPADDR_TYPE_V4;
-    esp_netif_set_dns_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), ESP_NETIF_DNS_MAIN, &dns_info);
-    ESP_LOGI("DNS", "Custom DNS set to 1.1.1.1");
-}
-
-void dns_test(void) {
-    struct addrinfo hints;
-    struct addrinfo *res;
-    int err;
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;  // IPv4
-    hints.ai_socktype = SOCK_STREAM;
-   
-    err = getaddrinfo("www.google.com", NULL, &hints, &res);
-    if (err != 0) {
-        ESP_LOGE(TAG, "DNS lookup failed: %s", strerror(err));
-    } else {
-        ESP_LOGI(TAG, "DNS lookup succeeded");
-        // Optionally, print the resolved IP
-        char ipStr[INET_ADDRSTRLEN];
-        struct sockaddr_in *addr = (struct sockaddr_in *)res->ai_addr;
-        inet_ntop(AF_INET, &(addr->sin_addr), ipStr, INET_ADDRSTRLEN);
-        ESP_LOGI(TAG, "Resolved IP: %s", ipStr);
-        freeaddrinfo(res);
-    }
-}
-*/
-/*
-esp_err_t client_event_get_handler(esp_http_client_event_handle_t evt)
-{
-    switch (evt->event_id)
-    {
-        case HTTP_EVENT_ON_DATA:
-        {
-            // Allocate a buffer for the complete response
-            char *data = malloc(evt->data_len + 1);
-            if (data == NULL) {
-                ESP_LOGE(TAG, "Failed to allocate memory for response");
-                break;
-            }
-            memcpy(data, evt->data, evt->data_len);
-            data[evt->data_len] = '\0';
-
-            ESP_LOGI(TAG, "Received response: %s", data);
-
-            // Parse the JSON response
-            cJSON *json = cJSON_Parse(data);
-            if (json == NULL) {
-                ESP_LOGE(TAG, "JSON parse error");
-            } else {
-                // Check success flag
-                cJSON *successItem = cJSON_GetObjectItem(json, "success");
-                if (successItem && successItem->valueint == 1) {
-                    // Get the array of devices
-                    cJSON *dataArray = cJSON_GetObjectItem(json, "data");
-                    if (cJSON_IsArray(dataArray)) {
-                        // Assume device 17 is the first (or only) device in the array.
-                        cJSON *device = cJSON_GetArrayItem(dataArray, 0);
-                        if (device) {
-                            // Get the device_settings string
-                            cJSON *deviceSettingsItem = cJSON_GetObjectItem(device, "device_settings");
-                            if (deviceSettingsItem && cJSON_IsString(deviceSettingsItem)) {
-                                // Parse the device_settings JSON string
-                                cJSON *settingsJson = cJSON_Parse(deviceSettingsItem->valuestring);
-                                if (settingsJson) {
-                                    // Extract brightness value from settings
-                                    cJSON *brightnessItem = cJSON_GetObjectItem(settingsJson, "brightness");
-                                    if (brightnessItem && cJSON_IsNumber(brightnessItem)) {
-                                        brightness = brightnessItem->valueint;
-                                        // Map brightness (0-100) to 0-255 for PWM duty cycle
-                                        duty = brightness * 255 / 100;
-                                    }
-                                    cJSON_Delete(settingsJson);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    ESP_LOGE(TAG, "Device retrieval not successful");
-                }
-                cJSON_Delete(json);
-            }
-            free(data);
-
-            // Update hardware outputs
-            // Update relay (assuming Relay_status is updated elsewhere)
-            gpio_set_level(GPIO_NUM_18, Relay_status);
-            // Update LED PWM using the calculated duty cycle
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
-            // Update speaker duty (if applicable)
-            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, duty_speaker);
-            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1);
-        }
-        break;
-       
-        default:
-            break;
-    }
-    return ESP_OK;
-}
-
-static void rest_get_device_states()
-{
-    esp_http_client_config_t config_get = {
-        .url = "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=17",
-        .host = "absolutely-vocal-lionfish.ngrok-free.app",
-        .method = HTTP_METHOD_GET,
-        .event_handler = client_event_get_handler,
-        .skip_cert_common_name_check = true,
-    };
-
-    esp_http_client_handle_t client = esp_http_client_init(&config_get);
-
-    esp_http_client_perform(client);
-    esp_http_client_cleanup(client);
-}
-
-static void rest_post_device_state(const char *device, int value)
-{
-    esp_http_client_config_t config_post = {
-        .url = HTTP_URL,
-        .method = HTTP_METHOD_POST,
-    };
-
-    esp_http_client_handle_t client = esp_http_client_init(&config_post);
-    
-    char post_data[50]; 
-    snprintf(post_data, sizeof(post_data), "%s=%d", device, value);
-
-    esp_http_client_set_post_field(client, post_data, strlen(post_data));
-    esp_http_client_set_header(client, "Content-Type", "application/json");
-
-    esp_http_client_perform(client);
-    esp_http_client_cleanup(client);
-}
-
-
-void http_polling_task(void *pvParameter)
-{
-    while (1)
-    {
-        rest_get_device_states();
-        vTaskDelay(pdMS_TO_TICKS(5000)); // Poll every 5 seconds
-    }
-}
-*/
-
-/*
-void http_status_task(void *pvParameters) {
-    //int light_status;
-    while (1) {
-        if (xQueueReceive(light_queue, &LED_status, portMAX_DELAY)) {
-            char post_data[50];
-            snprintf(post_data, sizeof(post_data), "{\"device\":\"light\",\"state\":%d}", LED_status);
-
-            esp_http_client_config_t config = {
-                .url = HTTP_URL,
-                .method = HTTP_METHOD_POST,
-            };
-
-            esp_http_client_handle_t client = esp_http_client_init(&config);
-            esp_http_client_set_post_field(client, post_data, strlen(post_data));
-            esp_http_client_set_header(client, "Content-Type", "application/json");
-
-            esp_err_t err = esp_http_client_perform(client);
-            if (err == ESP_OK) {
-                ESP_LOGI("HTTP", "Light status sent: %d", LED_status);
-            } else {
-                ESP_LOGE("HTTP", "Failed to send light status");
-            }
-
-            esp_http_client_cleanup(client);
-        }
-    }
-}
-*/
-
-/*
-// HTTP GET task: Periodically fetches data from httpbin.org/get
-void http_get_test_task(void *pvParameters)
-{
-    const char *url = "http://httpbin.org/get";
-    while (1) {
-        esp_http_client_config_t config = {
-            .url = url,
-            .timeout_ms = 5000,
-        };
-        esp_http_client_handle_t client = esp_http_client_init(&config);
-        if (client == NULL) {
-            ESP_LOGE(TAG, "Failed to initialize HTTP client");
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
-            continue;
-        }
-
-        esp_err_t err = esp_http_client_perform(client);
-        if (err == ESP_OK) {
-            int status_code = esp_http_client_get_status_code(client);
-            int content_length = esp_http_client_get_content_length(client);
-            ESP_LOGI(TAG, "HTTP GET Status = %d, Content Length = %d", status_code, content_length);
-            
-            // Optionally, read and log the response body
-            char buffer[512];
-            int data_read = esp_http_client_read(client, buffer, sizeof(buffer) - 1);
-            if (data_read >= 0) {
-                buffer[data_read] = 0;
-                ESP_LOGI(TAG, "Response: %s", buffer);
-            }
-        } else {
-            ESP_LOGE(TAG, "HTTP GET request failed: %s", esp_err_to_name(err));
-        }
-        esp_http_client_cleanup(client);
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
-    }
-}
-
-// HTTP POST task: Periodically sends a JSON payload to httpbin.org/post
-void http_post_test_task(void *pvParameters)
-{
-    const char *url = "http://httpbin.org/post";
-    // Example JSON payload to send
-    const char *post_data = "{\"device\": \"ESP32\", \"command\": \"LED_ON\"}";
-    
-    while (1) {
-        esp_http_client_config_t config = {
-            .url = url,
-            .timeout_ms = 5000,
-        };
-        esp_http_client_handle_t client = esp_http_client_init(&config);
-        if (client == NULL) {
-            ESP_LOGE(TAG, "Failed to initialize HTTP client");
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
-            continue;
-        }
-        
-        // Set HTTP method to POST and provide the JSON payload
-        esp_http_client_set_method(client, HTTP_METHOD_POST);
-        esp_http_client_set_post_field(client, post_data, strlen(post_data));
-        esp_http_client_set_header(client, "Content-Type", "application/json");
-        
-        esp_err_t err = esp_http_client_perform(client);
-        if (err == ESP_OK) {
-            int status_code = esp_http_client_get_status_code(client);
-            ESP_LOGI(TAG, "HTTP POST Status = %d", status_code);
-            
-            // Optionally, read and log the response body
-            char buffer[512];
-            int data_read = esp_http_client_read(client, buffer, sizeof(buffer) - 1);
-            if (data_read >= 0) {
-                buffer[data_read] = 0;
-                ESP_LOGI(TAG, "Response: %s", buffer);
-            }
-        } else {
-            ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
-        }
-        esp_http_client_cleanup(client);
-        vTaskDelay(15000 / portTICK_PERIOD_MS);
-    }
-}
-*/
-
-const char* clean_hostname(const char* hostname) {
-    while (*hostname == ':') {
-        hostname++;
-    }
-    return hostname;
-}
 
 //read temperature and humidity from sensor function
 void dht() 
@@ -553,8 +248,8 @@ void dht()
   
 }
 
-
-static esp_err_t _http_event_handler(esp_http_client_event_t *evt)
+/*
+static esp_err_t http_event_handler(esp_http_client_event_t *evt)
 {
     switch (evt->event_id) {
         case HTTP_EVENT_ON_DATA:
@@ -567,22 +262,24 @@ static esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     }
     return ESP_OK;
 }
+*/
 
+/*
 void http_post_sensor_data_task(void *pvParameters)
 {
-    const char *url = "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=20";    //"http://postman-echo.com/post"; // Test URL
+    const char *url = "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=11";   //"http://postman-echo.com/post"; // Test URL 
     char post_data[256];
 
     while (1) {
 
         dht();
 
-        /*
+        
         // Build JSON payload
-        snprintf(post_data, sizeof(post_data),
-                 "{\"temperature\": %.2d, \"humidity\": %.2d}",
-                 temperature, humidity);
-        */
+        //snprintf(post_data, sizeof(post_data),
+        //         "{\"temperature\": %.2d, \"humidity\": %.2d}",
+        //         temperature, humidity);
+        
 
 
         snprintf(post_data, sizeof(post_data),
@@ -593,20 +290,13 @@ void http_post_sensor_data_task(void *pvParameters)
         // Configure HTTP client with our event handler
         esp_http_client_config_t config = {
 
-
-            
             .url = url,
-            .host = clean_hostname("absolutely-vocal-lionfish.ngrok-free.app"),
-            .port = 443,
             .method = HTTP_METHOD_POST,
             .timeout_ms = 5000,
-            .event_handler = _http_event_handler,
+            .event_handler = http_event_handler,
             .cert_pem = server_cert_pem,
             .skip_cert_common_name_check = true,
             .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
-            
-
-
 
             //.skip_cert_common_name_check = true,
         };
@@ -638,19 +328,21 @@ void http_post_sensor_data_task(void *pvParameters)
         vTaskDelay(15000 / portTICK_PERIOD_MS);
     }
 }
+*/
 
 // ------------------------- HTTP GET Task -------------------------
 // This task polls the server for commands and updates device states accordingly.
+/*
 void http_get_commands_task(void *pvParameters)
 {
     // Replace with your Pi's server URL for command retrieval
-    const char *url = "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=20";
+    const char *url = "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=11";
     char buffer[512];
 
     while (1) {
         esp_http_client_config_t config = {
             .url = url,
-            .host = clean_hostname("absolutely-vocal-lionfish.ngrok-free.app"),
+            .method = HTTP_METHOD_GET,
             .timeout_ms = 5000,
             .cert_pem = server_cert_pem,
         };
@@ -719,14 +411,15 @@ void http_get_commands_task(void *pvParameters)
         }
 
         esp_http_client_cleanup(client);
-        // Poll every 3 seconds (adjust as needed)
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        // Poll every 15 seconds (adjust as needed)
+        vTaskDelay(15000 / portTICK_PERIOD_MS);
     }
 }
-
+*/
+/*
 void post_device_status(void) {
 
-    const char *url = "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=20";
+    const char *url = "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=11";
 
     char post_data[256];
 
@@ -771,7 +464,7 @@ void post_device_status(void) {
 
         esp_http_client_cleanup(client);
         // Poll every 3 seconds (adjust as needed)
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        vTaskDelay(15000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -787,7 +480,6 @@ void http_post_led_status_task(void *pvParameters)
 
         esp_http_client_config_t config = {
             .url = led_url,
-            .host = clean_hostname("absolutely-vocal-lionfish.ngrok-free.app"),
             .timeout_ms = 5000,
             .cert_pem = server_cert_pem,
         };
@@ -812,7 +504,7 @@ void http_post_led_status_task(void *pvParameters)
 
         esp_http_client_cleanup(client);
         // Post every 3 seconds (adjust as needed)
-        vTaskDelay(3000 / portTICK_PERIOD_MS);
+        vTaskDelay(15000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -829,7 +521,6 @@ void http_post_speaker_status_task(void *pvParameters)
 
         esp_http_client_config_t config = {
             .url = speaker_url,
-            .host = clean_hostname("absolutely-vocal-lionfish.ngrok-free.app"),
             .timeout_ms = 5000,
             .cert_pem = server_cert_pem,
         };
@@ -871,7 +562,6 @@ void http_post_relay_status_task(void *pvParameters)
 
         esp_http_client_config_t config = {
             .url = relay_url,
-            .host = clean_hostname("absolutely-vocal-lionfish.ngrok-free.app"),
             .timeout_ms = 5000,
             .cert_pem = server_cert_pem,
         };
@@ -916,7 +606,7 @@ static esp_err_t _http_get_event_handler(esp_http_client_event_t *evt)
 void http_get_task(void *pvParameters)
 {
     // Change the URL to any endpoint you want to test. For example:
-    const char *url = "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=20"; //"http://postman-echo.com/get";
+    const char *url = "https://absolutely-vocal-lionfish.ngrok-free.app/api/devices.php?device_id=11"; //"http://postman-echo.com/get";
 
     esp_http_client_config_t config = {
         .url = url,
@@ -950,126 +640,226 @@ void http_get_task(void *pvParameters)
         vTaskDelay(15000 / portTICK_PERIOD_MS);
     }
 }
+*/
 
-/*
-// Helper functions to update device settings
-// For LED brightness, adjust in 25% increments (range 0 to 100)
-void update_led_brightness(bool increase) {
-    if (increase) {
-        if (led_brightness < 100) {
-            led_brightness += 25;
-            if (led_brightness > 100) led_brightness = 100;
-        }
-    } else {
-        if (led_brightness > 0) {
-            led_brightness -= 25;
-            if (led_brightness < 0) led_brightness = 0;
-        }
-    }
-    ESP_LOGI(TAG, "LED brightness set to %d%%", led_brightness);
-}
+// Dummy sensor reading function (replace with actual sensor code)
+static void read_sensor_data(int *temperature, int *humidity) {
+    *temperature = 25; // Example value
+    *humidity = 50;    // Example value
 
-// For speaker volume, adjust in 10% increments (range 0 to 100)
-void update_speaker_volume(bool increase) {
-    if (increase) {
-        if (speaker_volume < 100) {
-            speaker_volume += 10;
-            if (speaker_volume > 100) speaker_volume = 100;
-        }
-    } else {
-        if (speaker_volume > 0) {
-            speaker_volume -= 10;
-            if (speaker_volume < 0) speaker_volume = 0;
-        }
-    }
-    ESP_LOGI(TAG, "Speaker volume set to %d%%", speaker_volume);
+    //dht();
+
 }
 
 // MQTT event handler callback
-static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event) {
+static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
+{
     esp_mqtt_client_handle_t client = event->client;
-
-    // Copy the topic and payload into null-terminated strings.
-    char topic[event->topic_len + 1];
-    memcpy(topic, event->topic, event->topic_len);
-    topic[event->topic_len] = '\0';
-
-    char payload[event->data_len + 1];
-    memcpy(payload, event->data, event->data_len);
-    payload[event->data_len] = '\0';
-
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
-            ESP_LOGI(TAG, "Connected to MQTT broker");
-            // Subscribe to control topics for the devices
-            esp_mqtt_client_subscribe(client, "control/led", 0);
-            esp_mqtt_client_subscribe(client, "control/speaker", 0);
-            esp_mqtt_client_subscribe(client, "control/relay", 0);
+            ESP_LOGI(TAG, "MQTT connected");
+            // Subscribe to control topics
+            esp_mqtt_client_subscribe(client, "device/led", 0);
+            esp_mqtt_client_subscribe(client, "device/speaker", 0);
+            esp_mqtt_client_subscribe(client, "device/relay", 0);
             break;
-
         case MQTT_EVENT_DISCONNECTED:
-            ESP_LOGI(TAG, "Disconnected from MQTT broker");
+            ESP_LOGI(TAG, "MQTT disconnected");
             break;
-
         case MQTT_EVENT_SUBSCRIBED:
-            ESP_LOGI(TAG, "Subscribed successfully, msg_id=%d", event->msg_id);
+            ESP_LOGI(TAG, "Subscribed, msg_id=%d", event->msg_id);
             break;
-
         case MQTT_EVENT_DATA:
-            ESP_LOGI(TAG, "Received topic: %s | payload: %s", topic, payload);
-            // Process control commands based on the topic
-            if (strcmp(topic, "control/led") == 0) {
-                if (strcmp(payload, "LED_ON") == 0) {
+            ESP_LOGI(TAG, "Received topic: %.*s", event->topic_len, event->topic);
+            ESP_LOGI(TAG, "Received data: %.*s", event->data_len, event->data);
+            // Example: Process LED control commands
+            if (strncmp(event->topic, "device/led", event->topic_len) == 0) {
+                if (strncmp(event->data, "LED_ON", event->data_len) == 0) {
                     led_on = true;
+                    if(duty == 0)
+                    {
+                        duty = 8000;
+                        led_brightness = 100;
+                    }
+
+                    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty); //set duty cycle
+                    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0); //update duty cycle
+
                     ESP_LOGI(TAG, "LED turned ON");
-                } else if (strcmp(payload, "LED_OFF") == 0) {
+                } else if (strncmp(event->data, "LED_OFF", event->data_len) == 0) {
                     led_on = false;
+
+                    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 0); //set duty cycle
+                    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0); //update duty cycle
+
                     ESP_LOGI(TAG, "LED turned OFF");
-                } else if (strcmp(payload, "LED_BRIGHTNESS_UP") == 0) {
-                    update_led_brightness(true);
-                } else if (strcmp(payload, "LED_BRIGHTNESS_DOWN") == 0) {
-                    update_led_brightness(false);
+                } else if (strncmp(event->data, "LED_BRIGHTNESS_UP", event->data_len) == 0) {
+                    if (led_brightness < 100) {
+                        led_brightness += 25;
+                        if (led_brightness > 100) led_brightness = 100;
+
+                        if (duty < 8000 && led_on) {
+                            duty += 2000; //adjust duty cycle
+                            //led_brightness += 25;
+                
+                            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty); //set duty cycle
+                            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0); //udate duty cycle
+                        }
+                    }
+                    ESP_LOGI(TAG, "LED brightness increased to %d", led_brightness);
+                } else if (strncmp(event->data, "LED_BRIGHTNESS_DOWN", event->data_len) == 0) {
+                    if (led_brightness > 0) {
+                        led_brightness -= 25;
+                        if (led_brightness < 0) led_brightness = 0;
+
+                        if (duty > 2000 && duty <= 8000 && led_on) {
+                            duty -= 2000; //adjust duty cycle
+                            //led_brightness -= 25;
+                
+                            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty); //set duty cycle
+                            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0); //update duty cycle
+                        }
+                
+                    }
+                    ESP_LOGI(TAG, "LED brightness decreased to %d", led_brightness);
                 }
-            } else if (strcmp(topic, "control/speaker") == 0) {
-                if (strcmp(payload, "SPEAKER_ON") == 0) {
+            }
+            if (strncmp(event->topic, "device/speaker", event->topic_len) == 0) {
+                if (strncmp(event->data, "SPEAKER_ON", event->data_len) == 0) {
                     speaker_on = true;
+
+                    if (duty_speaker == 0)
+                    {
+                        duty_speaker = 100;
+                        speaker_volume= 100;
+                    }
+
+                    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, duty_speaker); //set duty cycle
+                    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1); //update duty cycle
+
                     ESP_LOGI(TAG, "Speaker turned ON");
-                } else if (strcmp(payload, "SPEAKER_OFF") == 0) {
+                } else if (strncmp(event->data, "SPEAKER_OFF", event->data_len) == 0) {
                     speaker_on = false;
+
+                    ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, 0); //set duty cycle
+                    ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1); //update duty cycle
+                    
                     ESP_LOGI(TAG, "Speaker turned OFF");
-                } else if (strcmp(payload, "SPEAKER_VOLUME_UP") == 0) {
-                    update_speaker_volume(true);
-                } else if (strcmp(payload, "SPEAKER_VOLUME_DOWN") == 0) {
-                    update_speaker_volume(false);
+                } else if (strncmp(event->data, "SPEAKER_VOLUME_UP", event->data_len) == 0) {
+                    if (speaker_volume < 100) {
+                        speaker_volume += 10;
+                        if (speaker_volume > 100) speaker_volume = 100;
+
+                        if (duty_speaker < 100 && speaker_on) {
+
+                            duty_speaker += 10; //adjust duty cycle
+                            //speaker_volume += 10;
+                    
+                            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, duty_speaker); //set duty cycle
+                            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1); //update duty cycle
+                        }
+
+                    }
+                    ESP_LOGI(TAG, "Speaker volume increased to %d", speaker_volume);
+                } else if (strncmp(event->data, "SPEAKER_VOLUME_DOWN", event->data_len) == 0) {
+                    if (speaker_volume > 0) {
+                        speaker_volume -= 10;
+                        if (speaker_volume < 0) speaker_volume = 0;
+
+                        if (duty_speaker > 10 && duty_speaker <= 100 && speaker_on) {
+
+                            duty_speaker -= 10; //adjust duty cycle
+                            //speaker_volume -= 10; 
+                    
+                            ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, duty_speaker); //set duty cycle
+                            ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1); //update duty cycle
+                        }    
+                    }
+                    ESP_LOGI(TAG, "Speaker volume decreased to %d", speaker_volume);
                 }
-            } else if (strcmp(topic, "control/relay") == 0) {
-                if (strcmp(payload, "RELAY_ON") == 0) {
+            }
+            if (strncmp(event->topic, "device/relay", event->topic_len) == 0) {
+                if (strncmp(event->data, "RELAY_ON", event->data_len) == 0) {
                     relay_on = true;
+
+                    gpio_set_level(GPIO_NUM_18, 0);
+
                     ESP_LOGI(TAG, "Relay turned ON");
-                } else if (strcmp(payload, "RELAY_OFF") == 0) {
+                } else if (strncmp(event->data, "RELAY_OFF", event->data_len) == 0) {
                     relay_on = false;
+
+                    gpio_set_level(GPIO_NUM_18, 1);
+                    
                     ESP_LOGI(TAG, "Relay turned OFF");
                 }
             }
+            // Similar processing can be added for "device/speaker" and "device/relay"
             break;
-
         case MQTT_EVENT_ERROR:
             ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
             break;
-
         default:
             break;
     }
     return ESP_OK;
 }
 
-// Wrapper for the MQTT event handler
+// Wrapper for MQTT event handler
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
-                                 int32_t event_id, void *event_data) {
+                                 int32_t event_id, void *event_data)
+{
     mqtt_event_handler_cb(event_data);
 }
-*/
 
+// Start MQTT client
+void mqtt_app_start(void)
+{
+    const esp_mqtt_client_config_t mqtt_cfg = {
+        .broker.address.uri = "mqtt://3.tcp.ngrok.io:29613",
+        //.credentials.client_id = "ESP32_Client_001",
+        // Optionally, you can set keepalive or other parameters here.
+    };
+
+    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
+    esp_mqtt_client_start(client);
+}
+
+// Task to publish sensor data periodically
+void publish_sensor_data_task(void *pvParameters)
+{
+    //int temperature, humidity;
+    // For the purpose of this example, we assume the MQTT client is global
+    // or that you retrieve the handle from a global variable.
+    // In a real application, store the client handle returned from mqtt_app_start()
+    // in a global variable and then use it here.
+    esp_mqtt_client_handle_t client = NULL; // Replace with your global MQTT client handle
+
+    // Wait a moment to ensure client is connected (or use an event group)
+    vTaskDelay(pdMS_TO_TICKS(5000));
+
+    // In this example, we assume the client has already been started and is connected.
+    // If you stored the handle in a global variable, you can use that handle here.
+    // For demonstration, we reinitialize it if necessary (not ideal in production).
+    // In production, store the handle in a global variable in mqtt_app_start().
+
+    client = esp_mqtt_client_init(&(esp_mqtt_client_config_t){
+        .broker.address.uri = "mqtt://3.tcp.ngrok.io:29613",
+        
+        //.credentials.client_id = "ESP32_Client_001",
+    });
+    esp_mqtt_client_start(client);
+
+    while (1) {
+        //read_sensor_data(&temperature, &humidity);
+        dht();
+        char payload[128];
+        snprintf(payload, sizeof(payload), "{\"temperature\": %d, \"humidity\": %d}", temperature, humidity);
+        int msg_id = esp_mqtt_client_publish(client, "sensor/data", payload, 0, 1, 0);
+        ESP_LOGI(TAG, "Published sensor data: %s (msg_id=%d)", payload, msg_id);
+        vTaskDelay(pdMS_TO_TICKS(15000)); // Publish every 15 seconds
+    }
+}
 
 
 /******************************************************************************************************************************************* */
@@ -1320,7 +1110,7 @@ static void IRAM_ATTR switch_light(void* arg) {
 //volume up interrupt
 static void IRAM_ATTR volume_up(void* arg) {
 
-    if (duty_speaker < 100 && speaker_on == 1 && !gpio_event_pending) {
+    if (duty_speaker < 100 && speaker_on && !gpio_event_pending) {
 
         duty_speaker += 10; //adjust duty cycle
         speaker_volume += 10;
@@ -1478,6 +1268,7 @@ void gpio_configuration() {
     relay_control.pull_down_en = GPIO_PULLDOWN_DISABLE;
     gpio_config(&relay_control);
 
+    gpio_set_level(GPIO_NUM_18, 1);
 }
 
 /**********************MAIN**********************/
@@ -1490,8 +1281,8 @@ void app_main(void)
     // Initialize and start Wi-Fi
     wifi_init_sta();
     
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
 
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
 
     // Assuming Wi-Fi is already connected and you have a valid Wi-Fi netif handle.
     esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
@@ -1501,6 +1292,9 @@ void app_main(void)
     esp_netif_set_dns_info(netif, ESP_NETIF_DNS_MAIN, &dns_info);
     ESP_LOGI(TAG, "DNS set to 8.8.8.8");
 
+
+
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
 
     //Call temperature sensor function to obtain data
     //dht();
@@ -1519,40 +1313,50 @@ void app_main(void)
     //Create task for interrupt timer
     debounce_timer = xTimerCreate("debounce _timer", pdMS_TO_TICKS(1000), pdFALSE, NULL, debounce_timer_callback);
 
+    mqtt_app_start();  // Start MQTT client
 
-
-    vTaskDelay (pdMS_TO_TICKS(5000));
+    // Create a task to publish sensor data periodically
+    xTaskCreate(&publish_sensor_data_task, "publish_sensor_data_task", 8192, NULL, 5, NULL);
 
     /*
-    // Configure MQTT client (update the URI to your Raspberry Pi's IP)
-    const esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = "mqtt://test.mosquitto.org:1883",  // Change this to your Raspberry Pi's IP address
-        .credentials.client_id = "ESP32_Client_123",
-    };
-    
+    struct addrinfo hints;
+    struct addrinfo *res;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;  // IPv4
+    hints.ai_socktype = SOCK_STREAM;
 
-    // Initialize and start the MQTT client
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
-    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
-    esp_mqtt_client_start(client);
+    int err = getaddrinfo("absolutely-vocal-lionfish.ngrok-free.app", NULL, &hints, &res);
+    if (err != 0) {
+        ESP_LOGE(TAG, "DNS lookup failed: %s", strerror(err));
+    } else {
+        ESP_LOGI(TAG, "DNS lookup succeeded");
+        freeaddrinfo(res);
+    }
     */
 
-    uint8_t mac[6];
-    
-    esp_wifi_get_mac(WIFI_IF_STA, mac);
+    vTaskDelay (pdMS_TO_TICKS(5000));
+   
 
-    ESP_LOGI("Mac Address", "MAC Address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    //uint8_t mac[6];
+    
+    //esp_wifi_get_mac(WIFI_IF_STA, mac);
+
+    //ESP_LOGI("Mac Address", "MAC Address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     // Ensure Wi-Fi is connected before starting these tasks
     //xTaskCreate(&http_get_test_task, "http_get_test_task", 8192, NULL, 5, NULL);
     //xTaskCreate(&http_post_test_task, "http_post_test_task", 8192, NULL, 5, NULL);
 
-    xTaskCreate(&http_post_sensor_data_task, "http_post_sensor_data_task", 8192, NULL, 5, NULL);
-    xTaskCreate(&http_get_task, "http_get_task", 8192, NULL, 5, NULL);
-    xTaskCreate(&http_get_commands_task, "http_get_commands_task", 8192, NULL, 5, NULL);
-    xTaskCreate(&http_post_led_status_task, "http_post_led_status_task", 4096, NULL, 5, NULL);
-    xTaskCreate(&http_post_speaker_status_task, "http_post_speaker_status_task", 4096, NULL, 5, NULL);
-    xTaskCreate(&http_post_relay_status_task, "http_post_relay_status_task", 4096, NULL, 5, NULL);
+    //esp_log_level_set("esp-tls-mbedtls", ESP_LOG_DEBUG);
+    //xTaskCreate(&google_test_task, "google_test_task", 8192, NULL, 5, NULL);
+
+    //xTaskCreate(&http_post_sensor_data_task, "http_post_sensor_data_task", 8192, NULL, 5, NULL);
+    //xTaskCreate(&http_get_task, "http_get_task", 8192, NULL, 5, NULL);
+    //xTaskCreate(&http_get_commands_task, "http_get_commands_task", 8192, NULL, 5, NULL);
+    //xTaskCreate(&http_post_led_status_task, "http_post_led_status_task", 4096, NULL, 5, NULL);
+    //xTaskCreate(&http_post_speaker_status_task, "http_post_speaker_status_task", 4096, NULL, 5, NULL);
+    //xTaskCreate(&http_post_relay_status_task, "http_post_relay_status_task", 4096, NULL, 5, NULL);
 
 
     // Main loop – keep the task alive (you can add more app logic here)

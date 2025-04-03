@@ -18,6 +18,8 @@
     "git.enabled": true,
     "files.associations": {
         "*.xdc": "verilog",
-        "mqtt_client.h": "c"
+        "mqtt_client.h": "c",
+        "esp_crt_bundle.h": "c",
+        "esp_transport.h": "c"
     }
 }
