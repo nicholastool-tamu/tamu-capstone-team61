@@ -117,6 +117,7 @@ if (!$user_id && $username) {
 		display: none;
 	}
     </style>
+    <script src="paho-mqtt-min.js"></script>
 </head>
 <body>
     <?php include 'common_header.php'; ?>
@@ -147,12 +148,80 @@ if (!$user_id && $username) {
 	</div>
 	<script src="apiFunctions.js"></script>
 	<script>
-		let thermoDeviceId = null;
+		 // --- Begin: Dynamic load of Paho MQTT library ---
+    		function loadPaho(callback) {
+      			const script = document.createElement('script');
+      			script.src = "https://unpkg.com/paho-mqtt@1.1.0/paho-mqtt-min.js";
+      			script.type = "text/javascript";
+      			script.onload = function() {
+        // Optionally force attach to window (if not already)
+        		if (typeof window.Paho === 'undefined' && typeof Paho !== 'undefined') {
+          window.Paho = Paho;
+        }
+        callback();
+      };
+      script.onerror = function() {
+        console.error("Failed to load Paho MQTT library.");
+      };
+      document.head.appendChild(script);
+    }
+    // --- End: Dynamic load of Paho MQTT library ---
+
+    // After the library is loaded, run the MQTT client setup and thermo code.
+    loadPaho(function() {
+      console.log("Paho loaded:", window.Paho);
+      if (!window.Paho) {
+        console.error("Paho.MQTT is still undefined");
+        return;
+      }
+		//Code to set up MQTT broker to get temperature from temperature sensor on ESP32
+		const brokerHost = "myws.ngrok.io";
+		const brokerPort = 9001;
+		const clientId = "thermoClient-" + Math.random().toString(16).substr(2,8);
+		const mqttClient = new window.Paho.Client(brokerHost, brokerPort, "/", clientId);
+
+		mqttClient.onConnectionLost = function(responseObject) {
+			if (responseObject.errorCode !== 0) {
+    				console.error("MQTT Connection Lost: " + responseObject.errorMessage);
+  			}
+		};
+
+		mqttClient.onMessageArrived = function(message) {
+  			console.log("MQTT message arrived on topic", message.destinationName, ":", message.payloadString);
+			if (message.destinationName === "device/thermo") {
+    				if (message.payloadString.indexOf("temperature:") === 0) {
+      					const tempStr = message.payloadString.substring("temperature:".length).trim();
+      					const tempVal = parseInt(tempStr);
+      					if (!isNaN(tempVal)) {
+        					currentTemp = tempVal;
+        					updateDisplay();
+      					}
+    				}
+  			}
+		};
+
+
+		mqttClient.connect({
+  			onSuccess: onMqttConnect,
+  			onFailure: function(err) {
+    				console.error("MQTT Connection failed:", err.errorMessage);
+  			},
+			useSSL: true
+		});
+
+
+		function onMqttConnect() {
+  			console.log("MQTT connected");
+  			mqttClient.subscribe("device/thermo");
+		}
+		//Code that controls the logic of thermo.php
+		let thermoMappingId = null;
+		let thermoHardwareId = null;
 		let currentTemp = 72;
 		let setTemp = 72;
 		let isDragging = false;
 		let startAngle = 0;
-        	const dial = document.getElementById('dial');
+		const dial = document.getElementById('dial');
         	const dialHighlight = document.getElementById('dialHighlight');
         	const currentTempDisplay = document.getElementById('currentTemp');
         	const setTempDisplay = document.getElementById('setTemp');
@@ -177,11 +246,11 @@ if (!$user_id && $username) {
         	}
 
 		function updateTemperature() {
-			if (!thermoDeviceId) {
+			if (!thermoMappingId) {
 				console.error("Thermo device ID is not set!");
 				return;
 			}
-			const payload = {action: "update", device_id: thermoDeviceId, temperature: setTemp};
+			const payload = {action: "update", device_id: thermoMappingId, temperature: setTemp};
 			apiRequest('/api/devices.php', 'POST', payload, function(result,error) {
 				if (error || !result.success) {
 					showNotification("Error updating temperature: " + (error || result.message), false);
@@ -206,7 +275,6 @@ if (!$user_id && $username) {
             const rect = dial.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            
             const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
             const angleDiff = angle - startAngle;
             const scaleFactor = 20 / (2 * Math.PI);
@@ -246,6 +314,24 @@ if (!$user_id && $username) {
 
         updateDisplay();
 
+	function getMqttTopicForThermo() {
+		return "device/thermo";
+	}
+
+	function publishMqttCommand(topic, payload) {
+		const message = {
+			topic: topic,
+			payload: payload
+		};
+		apiRequest('/api/publish.php', 'POST', message, function(result, error) {
+        		if (error || !result.success) {
+          			showNotification("MQTT publish error: " + (error || result.message), false);
+        		} else {
+          			console.log("MQTT message published:", payload);
+        		}
+      		});
+    	}
+
 	document.addEventListener('DOMContentLoaded', function() {
 		const userId = '<?php echo $user_id; ?>';
 		apiRequest(`/api/devices.php?device_type=thermostat&user_id=${userId}`, 'GET', {}, function(result,error) {
@@ -254,8 +340,9 @@ if (!$user_id && $username) {
 				noThermoMessage.style.display = 'block';
 				return;
 			}
-			const device = result.data[0];
-			thermoDeviceId = device.device_id;
+		const device = result.data[0];
+			thermoMappingId = device.user_device_id;
+			thermoHardwareId = device.hardware_device_id;
 			if (device.temperature !== undefined && device.temperature !== null) {
 				currentTemp = setTemp = device.temperature;
 			} else if (device.device_settings) {
@@ -270,6 +357,7 @@ if (!$user_id && $username) {
 			}
 			updateDisplay();
 		});
+	});
 	});
     </script>
 </body>

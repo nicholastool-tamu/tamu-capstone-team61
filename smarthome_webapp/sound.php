@@ -149,7 +149,8 @@ if (!$user_id && $username) {
 
 	<script src="apiFunctions.js"></script>
 	<script>
-		let speakerDeviceId = null;
+		let speakerMappingId = null;
+		let speakerHardwareId = null;
 		document.addEventListener('DOMContentLoaded', function() {
 			const userId = '<?php echo $user_id; ?>';
 			apiRequest(`/api/devices.php?device_type=speaker&user_id=${userId}`, 'GET', {}, function(result, error) {
@@ -162,7 +163,8 @@ if (!$user_id && $username) {
 					return;
 				}
 				const device = result.data[0];
-				speakerDeviceId = device.device_id;
+				speakerMappingId = device.user_device_id;
+				speakerHardwareId = device.hardware_device_id;
 				let volume = 50;
 				if (device.volume !== undefined && device.volume !== null) {
 					volume = device.volume;
@@ -186,9 +188,29 @@ if (!$user_id && $username) {
 			setVolume(volume);
 		});
 
+		function getMqttTopicForSpeaker() {
+			return "device/speaker";
+		}
+
+		function publishMqttCommand(topic, payload) {
+			const message = {
+				topic: topic,
+				payload: payload
+			};
+			apiRequest('/api/publish.php', 'POST', message, function(result, error) {
+            			if (error || !result.success) {
+                			showNotification("MQTT publish error: " + (error || result.message), false);
+            			} else {
+                			console.log("MQTT message published:", payload);
+            			}
+        		});
+    		}
+
 		function setVolume(volume) {
-			if (!speakerDeviceId) return;
-			const payload = {action: "update", device_id: speakerDeviceId, volume: volume};
+			if (!speakerMappingId) return;
+			const topic = getMqttTopicForSpeaker();
+			publishMqttCommand(topic, "SPEAKER_VOLUME:" + volume);
+			const payload = {action: "update", device_id: speakerMappingId, volume: volume};
 			apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
 				if (error || !result.success) {
 					showNotification("Error updating volume: " + (error || result.message), false);
@@ -201,11 +223,25 @@ if (!$user_id && $username) {
 
 		function togglePlayPause() {
 			const btn = document.getElementById('playPauseBtn');
-			if (btn.textContent.trim() === 'Play') {
-				btn.textContent = 'Pause';
+			let command = "";
+			if (btn.textContent.trim() === '▶') {
+				btn.textContent = '⏸';
+				command = "SPEAKER_ON";
 			} else {
-				btn.textContent = 'Play';
+				btn.textContent = '▶';
+				command = "SPEAKER_OFF";
 			}
+			const topic = getMqttTopicForSpeaker();
+			publishMqttCommand(topic, command);
+
+			const payload = { action: "update", device_id: speakerMappingId, status: command };
+    				apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
+        			if (error || !result.success) {
+            				showNotification("Error updating speaker status: " + (error || result.message), false);
+        			} else {
+            				showNotification("Speaker status updated to: " + command, true);
+        			}
+    			});
 		}
 	</script>
 

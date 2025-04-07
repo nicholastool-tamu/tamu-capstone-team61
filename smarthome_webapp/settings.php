@@ -1,5 +1,26 @@
 <?php
 session_start();
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
+//Handle logout request
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+	require_once '/var/www/backend/includes/databaseConnection.php';
+	$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
+
+	if (!empty($userId)) {
+		$query = "UPDATE users SET status = 'inactive' WHERE user_id = ?";
+		if ($stmt = $conn->prepare($query)) {
+			$stmt->bind_param("i", $userId);
+			$stmt->execute();
+			$stmt->close();
+		}
+	}
+	session_destroy();
+	header("Location: login_page.php");
+	exit();
+}
 
 // Ensure user is logged in
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -7,6 +28,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit();
 }
 $userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
+require_once '/var/www/backend/includes/functions.php';
+enforceSessionCheck();
+
 ?>
 
 <!DOCTYPE html>
@@ -14,7 +38,17 @@ $userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+	<meta http-equiv="Pragma" content="no-cache" />
+	<meta http-equiv="Expires" content="0" />
     <title>Smart Home - Settings</title>
+	<script>
+	window.addEventListener('pageshow', function(event) {
+		if (event.persisted) {
+			window.location.reload();
+		}
+	});
+	</script>
     <?php 
     $pageTitle = "Settings";
     include 'common_styles.php';
@@ -151,6 +185,20 @@ $userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
             background-color: #999;
             color: white;
         }
+
+	.logout-container {
+		text-align: center;
+		margin: 20px 0;
+	}
+
+	.logout-btn {
+		padding: 12px 20px;
+		background-color: #FF4444;
+		color: white;
+		border: none;
+		border-radius: 5px;
+		cursor: pointer;
+	}
     </style>
 </head>
 <body>
@@ -202,6 +250,12 @@ $userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
             </div>
         </div>
     </div>
+
+	<div class="logout-container">
+		<form method="post" action="">
+			<button type="submit" name="logout" class="logout-btn">Log Out</button>
+		</form>
+	</div>
 	<script src="apiFunctions.js"></script>
     <script>
         let currentDeviceType = '';
@@ -223,9 +277,9 @@ $userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
         }
 
         function addDevice() {
-            const name = document.getElementById('newDeviceName').value.trim();
-            if (name) {
-            	const payload = {action: "add", device_type: currentDeviceType, device_name: name, user_id: userId, status: "inactive"};
+            const customName = document.getElementById('newDeviceName').value.trim();
+            if (customName) {
+            	const payload = {action: "add_mapping", device_type: currentDeviceType, custom_name: customName, user_id: userId, status: "inactive"};
 			apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
 			if (error || !result.success) {
 				showNotification("Error adding device: " + (error || result.message), false);
@@ -238,8 +292,8 @@ $userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
             }
         }
 
-        function deleteDevice(type, deviceId) {
-        	const payload = {action: "delete", device_id: deviceId};
+        function deleteDevice(type, userDeviceId) {
+        	const payload = {action: "delete_mapping", user_device_id: userDeviceId};
 		apiRequest('/api/devices.php', 'DELETE', payload, function(result, error) {
 			if (error || !result.success) {
 				showNotification("Error deleting device: " + (error || result.message), false)
@@ -261,8 +315,8 @@ $userId =isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '';
 			if (result.success && result.data) {
             			container.innerHTML = result.data.map(device => `
                 			<div class="device-item">
-                    			${device.device_name}
-                    			<button class="delete-btn" onclick="deleteDevice('${type}', ${device.device_id})">Delete</button>
+                    			${device.custom_name ? device.custom_name : "Device " + device.hardware_device_id}
+                    			<button class="delete-btn" onclick="deleteDevice('${type}', ${device.user_device_id})">Delete</button>
                 			</div>
             			`).join('');
 			} else {

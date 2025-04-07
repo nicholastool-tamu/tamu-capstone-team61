@@ -138,22 +138,35 @@
 					showNotitication("Password must be at least 8 characters", false);
 					return;
 				}
+				const checkUrl = `/api/users.php?username=${encodeURIComponent(username)}&email=${encodeURIComponent(email)}`;
+            			apiRequest(checkUrl, 'GET', null, function(checkResult, checkError) {
+                			if (checkError) {
+                    				showNotification("Error checking availability: " + checkError, false);
+                    				return;
+                			}
 
-				const payload = {
-					username: username, email: email, password: password, confirm_password: confirmPassword, status: "active"
-				};
+                			if (checkResult.exists) {
+                    				showNotification(checkResult.message, false);
+                    				return;
+                			}
 
-				apiRequest('/api/users.php', 'POST', payload, function(result, error) {
-					if (error) {
-						showNotification("Error: " + error, false);
-					} else {
-						showNotification(result.message, result.success);
-						if (result.success) {
-							setTimeout(() => {
-								window.location.href = 'login_page.php';
-							}, 1200);
+
+					const payload = {
+						username: username, email: email, password: password, confirm_password: confirmPassword
+					};
+
+					apiRequest('/api/users.php', 'POST', payload, function(result, error) {
+						if (error) {
+							showNotification("Error: " + error, false);
+						} else {
+							showNotification(result.message, result.success);
+							if (result.success) {
+								setTimeout(() => {
+									window.location.href = 'login_page.php';
+								}, 1200);
+							}
 						}
-					}
+					});
 				});
 			});
 		} else {

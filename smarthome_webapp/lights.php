@@ -168,7 +168,7 @@ if (!$user_id && $username) {
 			const userId = '<?php echo $user_id; ?>';
 			apiRequest(`/api/devices.php?device_type=lights&user_id=${userId}`, 'GET', {}, function(result, error) {
 				if (error) {
-					lightList.innerHTL = `<div class="no-lights-message">Error loading lights.</div>`;
+					lightList.innerHTML = `<div class="no-lights-message">Error loading lights.</div>`;
 					return;
 				}
 				if (result.success && result.data && result.data.length > 0) {
@@ -182,21 +182,24 @@ if (!$user_id && $username) {
 								}
 							} catch (e) {}
 						}
+						const displayName = device.custom_name ? device.custom_name : device.device_name;
 						return `<button class="light-select-btn"
-								data-id="${device.device_id}"
-								data-name="${device.device_name}"
+								data-id="${device.user_device_id}"
+								data-hardware="${device.hardware_device_id}"
+								data-name="${displayName}"
 								data-status="${device.status}"
 								data-brightness="${brightness}">
-								${device.device_name}
+								${displayName}
 							</button>`;
 					}).join('');
 					document.querySelectorAll('.light-select-btn').forEach(btn => {
 						btn.addEventListener('click', function() {
-							const deviceId = this.getAttribute('data-id');
-							const deviceName = this.getAttribute('data-name');
-							const deviceStatus = this.getAttribute('data-status');
-							const brightness = this.getAttribute('data-brightness');
-							selectLight(deviceId, deviceName, deviceStatus, brightness);
+							const mappingId = this.getAttribute('data-id');
+                    					const hardwareId = this.getAttribute('data-hardware');
+                    					const deviceName = this.getAttribute('data-name');
+                    					const deviceStatus = this.getAttribute('data-status');
+                    					const brightness = this.getAttribute('data-brightness');
+							selectLight(mappingId, hardwareId, deviceName, deviceStatus, brightness);
 						});
 					});
 				} else {
@@ -205,14 +208,15 @@ if (!$user_id && $username) {
 			});
 		}
 
-		function selectLight(deviceId, deviceName, deviceStatus, brightness) {
-			console.log("selectLight called for:", deviceId, deviceName);
-			currentLightId = deviceId;
+		function selectLight(mappingId, hardwareId, deviceName, deviceStatus, brightness) {
+			console.log("selectLight called for mapping:", mappingId, "hardware:", hardwareId,  deviceName);
+			currentMappingId = mappingId;
+			currentHardwareId = hardwareId
 			currentLightName = deviceName;
 			currentBrightness = brightness || 100;
 			document.querySelectorAll('.light-select-btn').forEach(btn => {
 				btn.classList.remove('active');
-				if (btn.textContent === deviceName) {
+				if (btn.getAttribute('data-id') === mappingId) {
 					btn.classList.add('active');
 				}
 			});
@@ -264,13 +268,16 @@ if (!$user_id && $username) {
 				currentBrightness = newBrightness;
 				updateBrightnessDisplay();
 				updateBrightnessButtons();
+				let command = (direction === 'decrease') ? "LED_BRIGHTNESS_DOWN" : "LED_BRIGHTNESS_UP";
+				let topic = getMqttTopicForLight(currentHardwareId);
+				publishMqttCommand(topic, command);
 				setBrightness(currentBrightness);
 			}
 		}
 
 		function setBrightness(value) {
-			if (!currentLightId) return;
-			const payload = {action: "update", device_id: currentLightId, brightness: parseInt(value)};
+			if (!currentMappingId || !currentHardwareId) return;
+			const payload = {action: "update", device_id: currentMappingId, brightness: parseInt(value)};
 			apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
 				if (error || !result.success) {
 					showNotification("Error updating brightness: " + (error || result.message), false);
@@ -282,20 +289,48 @@ if (!$user_id && $username) {
 
 		function toggleLight() {
 			console.log("toggleLight clicked");
-			if (!currentLightId) return;
-			const newStatus = isLightOn ? 'off' : 'on';
-			const payload = {action: "update", device_id: currentLightId, status: newStatus};
+			if (!currentMappingId || !currentHardwareId) return;
+			const newStatus = isLightOn ? "LIGHT_OFF" : "LIGHT_ON";
+			const topic = getMqttTopicForLight(currentHardwareId);
+			publishMqttCommand(topic, newStatus);
+			const payload = {action: "update", device_id: currentMappingId, status: newStatus};
 			apiRequest('/api/devices.php', 'POST', payload, function(result, error) {
 				if (error || !result.success) {
 					showNotification("Error updating light: " + (error || result.message), false);
 					return;
 				}
-				isLightOn = !isLightOn;
+				const normalizedStatus = newStatus.toLowerCase().includes('on') ? 'on' : 'off';
+				isLightOn = (normalizedStatus === 'on');
+				const activeBtn = document.querySelector('.light-select-btn.active');
+				if (activeBtn) {
+					activeBtn.setAttribute('data-status', normalizedStatus);
+				}
 				updateToggleUI();
-				showNotification(`Light status updated to: ${newStatus}`, true);
+				showNotification(`Light status updated to: ${normalizedStatus}`, true);
 			});
 		}
-		
+		function getMqttTopicForLight(hardwareId) {
+    			if (hardwareId == 1) {
+        			return "device/led";
+    			} else if (hardwareId == 2) {
+        			return "device/relay";
+    			}
+    			// Default fallback
+    			return "device/led";
+		}
+		function publishMqttCommand(topic, payload) {
+    			const message = {
+        			topic: topic,
+        			payload: payload
+    			};
+    			apiRequest('/api/publish.php', 'POST', message, function(result, error) {
+        			if (error || !result.success) {
+            				showNotification("MQTT publish error: " + (error || result.message), false);
+        			} else {
+            			console.log("MQTT message published:", payload);
+        			}
+    			});
+		}
 
 		document.addEventListener('DOMContentLoaded', loadLights);
 	</script>

@@ -1,10 +1,13 @@
 <?php
 session_start();
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
 
 
 if (isset($_SESSION['signup_success'])) {
     $success_message = "Account created successfully! Please login.";
-    unset($_SESSION['signup_success']);  
+    unset($_SESSION['signup_success']);
 }
 ?>
 
@@ -13,6 +16,22 @@ if (isset($_SESSION['signup_success'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="Cache-Control" content="no-cache, no-store, mustrevalidate" />
+	<meta http-equiv="Pragma" content="no-cache" />
+	<meta http-equiv="Expires" content="0" />
+	<script>
+	window.addEventListener('pageshow', function(event) {
+		if (event.persisted) {
+			window.location.reload();
+		}
+	});
+	</script>
+	<script>
+	window.history.pushState(null, "", window.location.href);
+	window.addEventListener("popstate", function(event) {
+		window.history.replace("start.php");
+	});
+	</script>
     <title>SHAPP - Login</title>
     <style>
         body {
