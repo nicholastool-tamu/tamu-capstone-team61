@@ -1,0 +1,71 @@
+<?php
+session_start();
+header('Content-Type: application/json');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+require_once '/var/www/backend/includes/databaseConnection.php';
+
+$rawData = file_get_contents('php://input');
+$data = json_decode($rawData, true);
+
+if (isset($data['username']) && isset($data['password'])) {
+	$username = trim($data['username']);
+	$password = $data['password'];
+
+	try {
+		$stmt = $conn->prepare("SELECT user_id, password FROM users WHERE username = ?");
+		if (!$stmt) {
+			throw new Exception("Prepare failed: " . $conn->error);
+		}
+
+		$stmt->bind_param("s", $username);
+		if (!$stmt->execute()) {
+			throw new Exception("Execute failed: " . $stmt->error);
+		}
+
+		$result = $stmt->get_result();
+
+		//Check if user exists, verify password
+		if ($result->num_rows === 1) {
+			$user = $result->fetch_assoc();
+			if (password_verify($password, $user['password'])) {
+				$stmtStatus = $conn->prepare("SELECT status, email_verified FROM users WHERE user_id = ?");
+				$stmtStatus->bind_param("i", $user['user_id']);
+				$stmtStatus->execute();
+				$statusResult = $stmtStatus->get_result();
+				if ($statusResult->num_rows === 1) {
+					$statusRow = $statusResult->fetch_assoc();
+					if ($statusRow['email_verified'] != 1) {
+						echo json_encode(['success' => false, 'message' => 'Please verify email before logging in.']);
+						exit();
+					}
+					if ($statusRow['status'] !== 'active') {
+						$updateStmt = $conn->prepare("UPDATE users SET status = 'active' WHERE user_id = ?");
+						$updateStmt->bind_param("i", $user['user_id']);
+						$updateStmt->execute();
+						$updateStmt->close();
+					}
+				}
+				$stmtStatus->close();
+
+				$_SESSION['logged_in'] = true;
+				$_SESSION['username'] = $username;
+				$_SESSION['user_id'] = $user['user_id'];
+				echo json_encode(['success' => true, 'message' => 'Login Successful']);
+				exit();
+			}
+		}
+
+		echo json_encode(['success' => false, 'message' => 'Invalid username or password']);
+	}
+	catch (Exception $e) {
+		echo json_encode(['success' => false, 'message' => 'System error: ' . $e->getMessage()]);
+	}
+} else {
+	echo json_encode(['success' => false, 'message' => 'Username and password required']);
+}
+?>
