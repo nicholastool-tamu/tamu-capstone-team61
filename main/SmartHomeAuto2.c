@@ -220,8 +220,7 @@ void wifi_init_sta(void)
     .sta = {
     .ssid = WIFI_SSID,
     .password = WIFI_PASS,
-    // Recommended to use at least WPA2
-    //.threshold.authmode = WIFI_AUTH_OPEN, // Allow open networks,
+
     },
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -669,8 +668,6 @@ static void IRAM_ATTR brightness_up(void* arg) {
             ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty); //set duty cycle
             ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0); //udate duty cycle
 
-            //rest_post_device_state("led", brightness);
-
             gpio_event_pending = true;
             xTimerStartFromISR(debounce_timer, NULL); //start timer
         }
@@ -687,8 +684,6 @@ static void IRAM_ATTR brightness_down(void* arg) {
 
             ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty); //set duty cycle
             ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0); //update duty cycle
-
-            //rest_post_device_state("led", brightness);
 
             gpio_event_pending = true;
             xTimerStartFromISR(debounce_timer, NULL); //start timer
@@ -722,8 +717,6 @@ static void IRAM_ATTR light_off(void* arg) {
         led_on = false;
 
         LED_status = 0;
-
-        //rest_post_device_state("led", brightness);
 
         gpio_event_pending = true;
         xTimerStartFromISR(debounce_timer, NULL); //start timer
@@ -965,8 +958,6 @@ void app_main(void)
 
     //Call LEDC configuration
     ledc_configuration();
-
-    //lightbulb_configuration();
 
     //Call Speaker Configuration
     speaker_configuration();
