@@ -151,6 +151,9 @@ if (!$user_id && $username) {
 	<script>
 		let speakerMappingId = null;
 		let speakerHardwareId = null;
+		let lastToggleTime = 0;
+		let isDraggingVolume = false;
+		let isPlaying = false;
 		document.addEventListener('DOMContentLoaded', function() {
 			const userId = '<?php echo $user_id; ?>';
 			apiRequest(`/api/devices.php?device_type=speaker&user_id=${userId}`, 'GET', {}, function(result, error) {
@@ -165,35 +168,64 @@ if (!$user_id && $username) {
 				const device = result.data[0];
 				speakerMappingId = device.user_device_id;
 				speakerHardwareId = device.hardware_device_id;
-				let volume = 50;
-				if (device.volume !== undefined && device.volume !== null) {
-					volume = device.volume;
-				} else if (device.device_settings) {
-					try {
-						const settings = JSON.parse(device.device_settings);
-						if (settings.volume !== undefined) {
-							volume = settings.volume;
-						}
-					} catch (e) {
-						console.error("Error parsing device_settings:", e);
-					}
-				}
-				document.getElementById('volumeSlider').value = volume;
-				document.getElementById('volumeValue').textContent = "Volume: " + volume + "%";
+				applySpeakerState(device);
+				speakerPoller = setInterval(pollSpeaker, 500);
+			});
+			const slider = document.getElementById('volumeSlider');
+			slider.addEventListener('mousedown',  () => isDraggingVolume = true);
+			slider.addEventListener('touchstart',  () => isDraggingVolume = true);
+			slider.addEventListener('mouseup',  () => isDraggingVolume = false);
+			slider.addEventListener('touchend',  () => isDraggingVolume = false);
+			slider.addEventListener('change', function() {
+				setVolume(parseInt(this.value, 10));
 			});
 		});
+
+		function pollSpeaker() {
+    			if (!speakerMappingId) return;
+			if (Date.now() - lastToggleTime < 3000) return;
+    			const userId = '<?php echo $user_id; ?>';
+    			apiRequest(`/api/devices.php?device_type=speaker&user_id=${userId}`, 'GET', null, function(result, error) {
+      				if (error || !result.success || !result.data) return;
+      				const device = result.data[0];
+      				applySpeakerState(device);
+    			});
+  		}
 
 		document.getElementById('volumeSlider').addEventListener('change', function() {
 			const volume = parseInt(this.value);
 			setVolume(volume);
 		});
 
+		function applySpeakerState(device) {
+   			const btn = document.getElementById('playPauseBtn');
+			const isPlaying = device.status && device.status.toLowerCase().includes('on');
+			btn.textContent = isPlaying ? '⏸' : '▶';
+			let volume = 50;
+			if (device.volume !== undefined && device.volume !== null) {
+				volume = device.volume;
+			} else if (device.device_settings) {
+				try {
+					const settings = JSON.parse(device.device_settings);
+					if (settings.volume !== undefined) {
+						volume = settings.volume;
+					}
+				} catch (e) {
+					console.error("Error parsing device_settings:", e);
+                                }
+			}
+			if (!isDraggingVolume) {
+				document.getElementById('volumeSlider').value = volume;
+				document.getElementById('volumeValue').textContent = "Volume: " + volume + "%";
+			}
+		}
+
 		function getMqttTopicForSpeaker() {
 			return "device/speaker";
 		}
 
 		function publishMqttCommand(topic, payload) {
-			const message = {
+				const message = {
 				topic: topic,
 				payload: payload
 			};
@@ -222,15 +254,13 @@ if (!$user_id && $username) {
 		}
 
 		function togglePlayPause() {
+			lastToggleTime = Date.now();
 			const btn = document.getElementById('playPauseBtn');
-			let command = "";
-			if (btn.textContent.trim() === '▶') {
-				btn.textContent = '⏸';
-				command = "SPEAKER_ON";
-			} else {
-				btn.textContent = '▶';
-				command = "SPEAKER_OFF";
-			}
+			isPlaying = !isPlaying;
+
+			btn.textContent = isPlaying ? '⏸' : '▶';
+			const command = isPlaying ? "SPEAKER_ON" : "SPEAKER_OFF";
+
 			const topic = getMqttTopicForSpeaker();
 			publishMqttCommand(topic, command);
 
@@ -244,6 +274,5 @@ if (!$user_id && $username) {
     			});
 		}
 	</script>
-
 </body>
 </html>

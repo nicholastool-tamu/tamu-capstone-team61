@@ -155,6 +155,7 @@ if (!$user_id && $username) {
 		let currentLightName = null;
 		let isLightOn = false;
 		let currentBrightness = 100;
+		let statusPoller = null;
 
 		const button = document.getElementById('toggleButton');
 		const statusEl = document.getElementById('status');
@@ -224,6 +225,8 @@ if (!$user_id && $username) {
 			button.disabled = false;
 			decreaseBtn.disabled = false;
 			increaseBtn.disabled = false;
+			if (statusPoller) clearInterval(statusPoller);
+			statusPoller = setInterval(pollLights, 500);
 			updateToggleUI();
 			updateBrightnessDisplay();
 			updateBrightnessButtons();
@@ -332,7 +335,33 @@ if (!$user_id && $username) {
     			});
 		}
 
-		document.addEventListener('DOMContentLoaded', loadLights);
+
+		function pollLights() {
+			const userId = '<?php echo $user_id; ?>';
+			if (!currentMappingId) return;
+				apiRequest(`/api/devices.php?device_type=lights&user_id=${userId}`, 'GET', null, function(result, error) {
+					if (error || !result.success) return;
+					const selectedDevice = result.data.find(device => device.user_device_id == currentMappingId);
+					if (!selectedDevice) return;
+					const nowOn = selectedDevice.status.toLowerCase().includes('on');
+					if (nowOn !== isLightOn) {
+						isLightOn = nowOn;
+						updateToggleUI();
+					}
+					if (selectedDevice.device_settings) {
+						try {
+							const settings = JSON.parse(selectedDevice.device_settings);
+							if (settings.brightness !== undefined) {
+								currentBrightness = settings.brightness;
+								updateBrightnessDisplay();
+								updateBrightnessButtons();
+							}
+						} catch{}
+					}
+				});
+		}
+
+		document.addEventListener('DOMContentLoaded',loadLights);
 	</script>
 </body>
 </html>

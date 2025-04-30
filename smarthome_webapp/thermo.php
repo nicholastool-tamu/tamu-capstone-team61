@@ -112,12 +112,11 @@ if (!$user_id && $username) {
 	.no-thermo-message {
 		text-align: center;
 		font-size: 24px;
-		color: white;
+		color: black;
 		margin-top: 20px;
 		display: none;
 	}
     </style>
-    <script src="paho-mqtt-min.js"></script>
 </head>
 <body>
     <?php include 'common_header.php'; ?>
@@ -148,72 +147,6 @@ if (!$user_id && $username) {
 	</div>
 	<script src="apiFunctions.js"></script>
 	<script>
-		 // --- Begin: Dynamic load of Paho MQTT library ---
-    		function loadPaho(callback) {
-      			const script = document.createElement('script');
-      			script.src = "https://unpkg.com/paho-mqtt@1.1.0/paho-mqtt-min.js";
-      			script.type = "text/javascript";
-      			script.onload = function() {
-        // Optionally force attach to window (if not already)
-        		if (typeof window.Paho === 'undefined' && typeof Paho !== 'undefined') {
-          window.Paho = Paho;
-        }
-        callback();
-      };
-      script.onerror = function() {
-        console.error("Failed to load Paho MQTT library.");
-      };
-      document.head.appendChild(script);
-    }
-    // --- End: Dynamic load of Paho MQTT library ---
-
-    // After the library is loaded, run the MQTT client setup and thermo code.
-    loadPaho(function() {
-      console.log("Paho loaded:", window.Paho);
-      if (!window.Paho) {
-        console.error("Paho.MQTT is still undefined");
-        return;
-      }
-		//Code to set up MQTT broker to get temperature from temperature sensor on ESP32
-		const brokerHost = "myws.ngrok.io";
-		const brokerPort = 9001;
-		const clientId = "thermoClient-" + Math.random().toString(16).substr(2,8);
-		const mqttClient = new window.Paho.Client(brokerHost, brokerPort, "/", clientId);
-
-		mqttClient.onConnectionLost = function(responseObject) {
-			if (responseObject.errorCode !== 0) {
-    				console.error("MQTT Connection Lost: " + responseObject.errorMessage);
-  			}
-		};
-
-		mqttClient.onMessageArrived = function(message) {
-  			console.log("MQTT message arrived on topic", message.destinationName, ":", message.payloadString);
-			if (message.destinationName === "device/thermo") {
-    				if (message.payloadString.indexOf("temperature:") === 0) {
-      					const tempStr = message.payloadString.substring("temperature:".length).trim();
-      					const tempVal = parseInt(tempStr);
-      					if (!isNaN(tempVal)) {
-        					currentTemp = tempVal;
-        					updateDisplay();
-      					}
-    				}
-  			}
-		};
-
-
-		mqttClient.connect({
-  			onSuccess: onMqttConnect,
-  			onFailure: function(err) {
-    				console.error("MQTT Connection failed:", err.errorMessage);
-  			},
-			useSSL: true
-		});
-
-
-		function onMqttConnect() {
-  			console.log("MQTT connected");
-  			mqttClient.subscribe("device/thermo");
-		}
 		//Code that controls the logic of thermo.php
 		let thermoMappingId = null;
 		let thermoHardwareId = null;
@@ -221,17 +154,19 @@ if (!$user_id && $username) {
 		let setTemp = 72;
 		let isDragging = false;
 		let startAngle = 0;
+		let prevAngle = 0;
+		let angleOffset = 0;
 		const dial = document.getElementById('dial');
-        	const dialHighlight = document.getElementById('dialHighlight');
-        	const currentTempDisplay = document.getElementById('currentTemp');
-        	const setTempDisplay = document.getElementById('setTemp');
+		const dialHighlight = document.getElementById('dialHighlight');
+		const currentTempDisplay = document.getElementById('currentTemp');
+		const setTempDisplay = document.getElementById('setTemp');
 		const manualTempInput = document.getElementById('manualTemp');
 		const setManualTempButton = document.getElementById('setManualTemp');
 		const thermoContainer = document.getElementById('thermoContainer');
 		const noThermoMessage = document.getElementById('noThermoMessage');
 
 
-        	function tempToPercentage(temp) {
+		function tempToPercentage(temp) {
             		return ((temp - 60) / (80 - 60)) * 100;
         	}
 
@@ -265,7 +200,9 @@ if (!$user_id && $username) {
             	const rect = dial.getBoundingClientRect();
             	const centerX = rect.left + rect.width / 2;
             	const centerY = rect.top + rect.height / 2;
-            	startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+            	const a = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+		prevAngle = a;
+		angleOffset = 0;
 		initialTemp = setTemp;
         });
 
@@ -276,9 +213,14 @@ if (!$user_id && $username) {
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
             const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-            const angleDiff = angle - startAngle;
+            let angleDiff = angle - prevAngle;
+	    if (angleDiff > Math.PI) angleDiff -= 2*Math.PI;
+	    else if (angleDiff < -Math.PI) angleDiff += 2*Math.PI;
+	    if (angleDiff === -Math.PI) angleDiff = Math.PI;
+	    angleOffset += angleDiff;
+	    prevAngle = angle;
             const scaleFactor = 20 / (2 * Math.PI);
-            const tempChange = angleDiff * scaleFactor;;
+            const tempChange = angleOffset * scaleFactor;;
             setTemp = Math.min(80, Math.max(60, Math.round(initialTemp + tempChange)));
             updateDisplay();
         });
@@ -315,7 +257,7 @@ if (!$user_id && $username) {
         updateDisplay();
 
 	function getMqttTopicForThermo() {
-		return "device/thermo";
+		return "device/thermoSet";
 	}
 
 	function publishMqttCommand(topic, payload) {
@@ -331,6 +273,7 @@ if (!$user_id && $username) {
         		}
       		});
     	}
+
 
 	document.addEventListener('DOMContentLoaded', function() {
 		const userId = '<?php echo $user_id; ?>';
@@ -356,8 +299,18 @@ if (!$user_id && $username) {
 				}
 			}
 			updateDisplay();
+			function pollTemperature() {
+                		apiRequest('/api/currentTemperature.php', 'GET', null, function(result, error) {
+                        		if (error || !result.success) {
+                                		console.error("Error polling temperature:", error || result.message);
+                        		} else {
+                                		currentTemp = result.temperature;
+                                	updateDisplay();
+                        		}
+                		});
+        		}
+        		setInterval(pollTemperature, 2500);
 		});
-	});
 	});
     </script>
 </body>

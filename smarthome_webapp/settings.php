@@ -208,8 +208,14 @@ enforceSessionCheck();
         <div class="section">
             <h2>Profile</h2>
             <div class="profile-info">
-                Username: <?php echo htmlspecialchars($_SESSION['username']); ?>
+                Username: <span id="Username">
+			<?php echo htmlspecialchars($_SESSION['username']); ?>
+		</span>
             </div>
+	    <div style="margin-top: 1rem;">
+    		<button class="modal-btn confirm-btn" onclick="openChangeUsernameModal()">Change Username</button>
+    		<button class="modal-btn confirm-btn" onclick="openChangePasswordModal()">Change Password</button>
+  	    </div>
         </div>
 
         <div class="section">
@@ -240,6 +246,33 @@ enforceSessionCheck();
         </div>
     </div>
 
+
+	<div id="changeUsernameModal" class="modal">
+  		<div class="modal-content">
+    			<h3>Change Username</h3>
+    			<input type="text" id="newUsername" placeholder="New username">
+    			<div class="modal-buttons">
+      				<button class="modal-btn cancel-btn" onclick="closeChangeUsernameModal()">Cancel</button>
+      				<button class="modal-btn confirm-btn" onclick="submitUsernameChange()">Save</button>
+    			</div>
+  		</div>
+	</div>
+
+
+	<div id="changePasswordModal" class="modal">
+  		<div class="modal-content">
+    			<h3>Change Password</h3>
+    			<input type="password" id="currentPassword" placeholder="Current password">
+    			<input type="password" id="newPassword" placeholder="New password">
+    			<input type="password" id="confirmPassword" placeholder="Confirm new password">
+    			<div class="modal-buttons">
+      				<button class="modal-btn cancel-btn" onclick="closeChangePasswordModal()">Cancel</button>
+      				<button class="modal-btn confirm-btn" onclick="submitPasswordChange()">Save</button>
+    			</div>
+  		</div>
+	</div>
+
+
     <div id="addDeviceModal" class="modal">
         <div class="modal-content">
             <h3>Add New Device</h3>
@@ -265,6 +298,54 @@ enforceSessionCheck();
             const list = document.getElementById(`${type}-list`);
             list.style.display = list.style.display === 'block' ? 'none' : 'block';
         }
+
+	function openChangeUsernameModal() {
+		document.getElementById('changeUsernameModal').style.display = 'flex';
+	}
+
+	function closeChangeUsernameModal() {
+    		document.getElementById('changeUsernameModal').style.display = 'none';
+	}
+
+	function submitUsernameChange() {
+    		const newUsername = document.getElementById('newUsername').value.trim();
+    		if (!newUsername) return showNotification('Username cannot be empty', false);
+    		apiRequest('/api/users.php', 'POST',{action: 'update_username', user_id: userId, username: newUsername}, (result, error) => {
+            		if (error || !result.success) {
+                		showNotification('Username change failed: ' + (error || result.message), false);
+            		} else {
+                		document.getElementById('Username').textContent = newUsername;
+                		showNotification('Username updated successfully', true);
+                		closeChangeUsernameModal();
+            		}
+        	});
+	}
+
+	function openChangePasswordModal() {
+    		document.getElementById('changePasswordModal').style.display = 'flex';
+	}
+
+	function closeChangePasswordModal() {
+    		document.getElementById('changePasswordModal').style.display = 'none';
+	}
+
+	function submitPasswordChange() {
+    		const currentPassword = document.getElementById('currentPassword').value;
+    		const newPassword     = document.getElementById('newPassword').value;
+    		const confirmPassword = document.getElementById('confirmPassword').value;
+    		if (newPassword !== confirmPassword) return showNotification('New passwords do not match', false);
+    		if (newPassword.length < 8)     return showNotification('Password must be at least 8 characters', false);
+    		apiRequest('/api/users.php', 'POST', {action: 'update_password', user_id: userId, current_password: currentPassword, new_password: newPassword, confirm_password: confirmPassword}, (result, error) => {
+            		if (error || !result.success) {
+                		showNotification('Password change failed: ' + (error || result.message), false);
+            		} else {
+                		['currentPassword','newPassword','confirmPassword'].forEach(id =>
+                    			document.getElementById(id).value = '');
+                			showNotification('Password updated successfully', true);
+                			closeChangePasswordModal();
+            		}
+        	});
+	}
 
         function showAddDeviceModal(type) {
             currentDeviceType = type;

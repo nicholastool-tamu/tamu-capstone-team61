@@ -33,7 +33,7 @@ function apiRequest(endpoint, method, payload, callback) {
 }
 
 
-function showNotification(message, isSuccess = true, duration = 10000) {
+function showNotification(message, isSuccess = true, duration = 2500) {
 	let notification = document.getElementById('notification');
 	if (!notification) {
 		notification = document.createElement('div');
