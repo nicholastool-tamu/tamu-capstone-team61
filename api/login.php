@@ -1,6 +1,9 @@
 <?php
 session_start();
 header('Content-Type: application/json');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -25,20 +28,39 @@ if (isset($data['username']) && isset($data['password'])) {
 		}
 
 		$result = $stmt->get_result();
-
 		//Check if user exists, verify password
-		if ($result->num_rows === 1) {
-			$user = $result->fetch_assoc();
-			if (password_verify($password, $user['password'])) {
-				$_SESSION['logged_in'] = true;
-				$_SESSION['username'] = $username;
-				$_SESSION['user_id'] = $user['user_id'];
-				echo json_encode(['success' => true, 'message' => 'Login Successful']);
-				exit();
-			}
+		if ($result->num_rows === 0) {
+			echo json_encode(['success' => false, 'message' => 'Username not found.']);
+			exit();
 		}
-
-		echo json_encode(['success' => false, 'message' => 'Invalid username or password']);
+		$user = $result->fetch_assoc();
+		if (!password_verify($password, $user['password'])) {
+			echo json_encode(['success' => false, 'message' => 'Incorrect password.']);
+			exit();
+		}
+		$stmtStatus = $conn->prepare("SELECT status, email_verified FROM users WHERE user_id = ?");
+		$stmtStatus->bind_param("i", $user['user_id']);
+		$stmtStatus->execute();
+		$statusResult = $stmtStatus->get_result();
+			if ($statusResult->num_rows === 1) {
+				$statusRow = $statusResult->fetch_assoc();
+				if ($statusRow['email_verified'] != 1) {
+					echo json_encode(['success' => false, 'message' => 'Please verify email before logging in.']);
+					exit();
+				}
+				if ($statusRow['status'] !== 'active') {
+					$updateStmt = $conn->prepare("UPDATE users SET status = 'active' WHERE user_id = ?");
+					$updateStmt->bind_param("i", $user['user_id']);
+					$updateStmt->execute();
+					$updateStmt->close();
+				}
+			}
+			$stmtStatus->close();
+			$_SESSION['logged_in'] = true;
+			$_SESSION['username'] = $username;
+			$_SESSION['user_id'] = $user['user_id'];
+			echo json_encode(['success' => true, 'message' => 'Login Successful']);
+			exit();
 	}
 	catch (Exception $e) {
 		echo json_encode(['success' => false, 'message' => 'System error: ' . $e->getMessage()]);

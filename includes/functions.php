@@ -5,22 +5,62 @@ function cleanInput($data) {
 	return htmlspecialchars(stripslashes(trim($data)));
 }
 function jsonResponse($success, $message, $data = []) {
-	//Log json responses to a file
-	$logFile = __DIR__ . '/responses.log';
-	file_put_contents($logFile, json_encode([
-		'success' => $success,
-		'message' => $message,
-		'data' => $data,
-		'timestamp' => date('Y-m-d H:i:s')
-	]) . PHP_EOL, FILE_APPEND);
-
+	if (ob_get_length()) {
+		ob_clean();
+	}
 	//Output responses to web server
 	header('Content-Type: application/json');
 	echo json_encode([
 		'success' => $success,
 		'message' => $message,
 		'data' => $data
-	]); 
+	]);
+	exit();
+}
+
+function enforceSessionCheck() {
+	require_once '/var/www/backend/includes/databaseConnection.php';
+	$stmt = $conn->prepare("SELECT status FROM users WHERE user_id = ?");
+	if (!$stmt) {
+		session_destroy();
+		header("Location: login_page.php");
+		exit();
+	}
+	$stmt->bind_param("i", $_SESSION['user_id']);
+	$stmt->execute();
+	$result = $stmt->get_result();
+	if ($result->num_rows === 1) {
+		$row = $result->fetch_assoc();
+		if ($row['status'] !== 'active') {
+			session_destroy();
+			header("Location: login_page.php");
+			exit();
+		}
+	} else {
+		session_destroy();
+		header("Location: login_page.php");
+		exit();
+	}
+	$stmt->close();
+}
+
+function sendVerificationEmail($userEmail, $token) {
+	$subject = "Verify your email for Smart Home";
+	$verificationLink = "https://absolutely-vocal-lionfish.ngrok-free.app/api/verifyEmail.php?token=" . urlencode($token);
+
+	$message = "Hello, \n\n";
+	$message .= "Thank you for signing up for Smart Home.\n";
+	$message .= "Please click the link below to verify your email:\n";
+	$message .= $verificationLink . "\n\n";
+	$message .= "If you did not sign up for Smart Home, ignore this email.";
+
+	$headers = "From: smarthomecapstone@gmail.com\r\n";
+	$headers .= "Reply-To: smarthomecapstone@gmail.com\r\n";
+	$headers .= "X-Mailer: PHP/" . phpversion();
+
+	$sent = mail($userEmail, $subject, $message, $headers);
+	error_log("sendVerificationEmail: mail() returned " . ($sent ? "true" : "false") . " for email: $userEmail");
+	return $sent;
 }
 
 function getRecord($conn, $table, $conditions = []) {
@@ -140,13 +180,13 @@ function updateEntity($conn, $table, $fields, $values, $types, $id_field, $id_va
 function createRecord($conn, $table, $fields, $types, ...$params) {
 	//Error handling for missing inputs
 	if(empty($fields) || empty($params)) {
-		jsonResponse(false, "Missing required fields or parameters");
+		return ['success' => false, 'message' => "Missing required fields or parameters"];
 	}
-	
+
 	//Check for correct amount of parameters
 	$expectedParamsCount = strlen($types);
 	if(count($params) !== $expectedParamsCount) {
-		jsonResponse(false, "Number of parameters is incorrect.");
+		return ['success' => false, 'message' => "Number of parameters is incorrect."];
 	}
 
 	//Prepare for SQL Query
@@ -159,17 +199,17 @@ function createRecord($conn, $table, $fields, $types, ...$params) {
 
 	//Check if query preparation was successful
 	if (!$stmt) {
-		jsonResponse(false, "Failed to prepare statement: " . $conn->error);
+		return ['success' => false, 'message' => "Failed to prepare statement: " . $conn->error];
 	}
-	
+
 	//Bind parameters, execute and check if successful
 	$stmt->bind_param($types, ...$params);
 
 	if ($stmt->execute()) {
-		jsonResponse(true, ucfirst($table) . " created successfully.");
+		return ['success' => true, 'message' => ucfirst($table) . " created successfully."];
 	}
 	else {
-		jsonResponse(false, "Failed to create " . $table . ".");
+		return ['success' => false, 'message' => "Failed to create " . $table . "."];
 	}
 
 	//Close statement to free resources
@@ -200,5 +240,4 @@ function deleteRecord($conn, $table, $id_field, $id_value) {
 	//Close statement to free resources
 	$stmt->close();
 }
-
 ?>
